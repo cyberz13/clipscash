@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=5 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('wiz_1_title') }}</h1>
+    <form method="post" action="{{ url_for('camp_wiz_step', step=1) }}" enctype="multipart/form-data">
+      <div class="field">
+        <label>{{ 'عنوان الحملة' if lang=='ar' else 'Campaign title' }}</label>
+        <input type="text" name="title" value="{{ state.title or '' }}" required>
+      </div>
+      <div class="field">
+        <label>{{ 'الوصف القصير' if lang=='ar' else 'Short description' }}</label>
+        <textarea name="description" rows="4" required>{{ state.description or '' }}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>{{ t('category') }}</label>
+          <select name="category" required>
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if cat == state.category %}selected{% endif %}>{{ cat_label(cat) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>{{ 'رابط الصورة (اختياري)' if lang=='ar' else 'Cover image URL (optional)' }}</label>
+          <input type="url" name="image_url" value="{{ state.image_url or '' }}">
+        </div>
+      </div>
+      <div class="field">
+        <label>{{ 'أو ارفع صورة' if lang=='ar' else 'Or upload an image' }}</label>
+        <input type="file" name="image_file" accept="image/*">
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('brand_campaigns') }}" class="btn">{{ 'إلغاء' if lang=='ar' else 'Cancel' }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

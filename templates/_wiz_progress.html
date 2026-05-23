@@ -1,0 +1,6 @@
+<div class="wizard-progress">
+  {% for i in range(1, total + 1) %}
+    <div class="seg {% if i < step %}done{% elif i == step %}current{% endif %}"></div>
+  {% endfor %}
+</div>
+<div class="wizard-step-num">{{ t('wiz_step') }} {{ step }} {{ t('wiz_of') }} {{ total }}</div>

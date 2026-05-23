@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">⚙ Admin</h1>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Users</div><div class="value">{{ stats.users }}</div></div>
+        <div class="kpi"><div class="label">Creators</div><div class="value">{{ stats.creators }}</div></div>
+        <div class="kpi"><div class="label">Brands</div><div class="value">{{ stats.brands }}</div></div>
+        <div class="kpi accent"><div class="label">Total paid</div><div class="value">{{ fmt_money(stats.paid) }}</div></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Campaigns</div><div class="value">{{ stats.campaigns }}</div></div>
+        <div class="kpi"><div class="label">Submissions</div><div class="value">{{ stats.submissions }}</div></div>
+        <div class="kpi"><div class="label">Pending</div><div class="value">{{ stats.pending }}</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=4 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('sub_wiz_3') }}</h1>
+    <p class="sub">{{ 'ارفع حتى ٣ لقطات شاشة تثبت أن المنشور نُشر.' if lang=='ar' else 'Upload up to 3 screenshots proving the post is live.' }}</p>
+    <form method="post" action="{{ url_for('submit_step', cid=c.id, step=3) }}" enctype="multipart/form-data">
+      <div class="field-row" style="grid-template-columns: repeat(3, 1fr);">
+        {% for i in (1, 2, 3) %}
+        <div class="field">
+          <label>{{ 'إثبات' if lang=='ar' else 'Proof' }} #{{ i }}</label>
+          <input type="file" name="proof_{{ i }}" accept="image/*">
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('submit_back', cid=c.id, step=2) }}" class="btn">← {{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

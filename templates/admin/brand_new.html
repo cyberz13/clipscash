@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('admin_users') }}" class="muted">← Users</a>
+      <h1 style="font-family: var(--font-display);">+ {{ 'إضافة براند جديد' if lang=='ar' else 'Add a new brand' }}</h1>
+
+      <div class="form-card">
+        <p class="sub">{{ 'البراند سيستطيع تسجيل الدخول مباشرة + سيُسجّل مبدعيه بنفسه.' if lang=='ar' else 'The brand will be able to sign in immediately and register their own creators.' }}</p>
+        <form method="post">
+          <div class="field">
+            <label>{{ 'اسم البراند' if lang=='ar' else 'Brand name' }}</label>
+            <input type="text" name="name" value="{{ name or '' }}" required autofocus>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'البريد الإلكتروني' if lang=='ar' else 'Email' }}</label>
+              <input type="email" name="email" value="{{ email or '' }}" required>
+            </div>
+            <div class="field">
+              <label>{{ 'الدولة (اختياري)' if lang=='ar' else 'Country (optional)' }}</label>
+              <input type="text" name="country" value="{{ country or '' }}" placeholder="SA / EG / AE …">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'كلمة المرور الأولية' if lang=='ar' else 'Initial password' }}</label>
+              <input type="text" name="password" minlength="6" required id="pw">
+              <button type="button" class="btn btn-sm mt-1" onclick="document.getElementById('pw').value = Math.random().toString(36).slice(2,10) + '!' + Math.floor(Math.random()*100)">{{ 'توليد عشوائي' if lang=='ar' else 'Generate' }}</button>
+            </div>
+            <div class="field">
+              <label>{{ 'رصيد ابتدائي (USD)' if lang=='ar' else 'Initial wallet balance (USD)' }}</label>
+              <input type="number" name="initial_balance" step="0.01" min="0" value="0">
+              <div class="hint">{{ 'لتمويل حملاتهم الأولى.' if lang=='ar' else 'For funding their first campaigns.' }}</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <a href="{{ url_for('admin_users') }}" class="btn">{{ 'إلغاء' if lang=='ar' else 'Cancel' }}</a>
+            <button class="btn btn-primary">{{ 'إنشاء البراند' if lang=='ar' else 'Create brand' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

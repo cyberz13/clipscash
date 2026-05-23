@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('brand_team') }}" class="muted">← {{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</a>
+
+      <div class="flex flex-between mt-1">
+        <div>
+          <h1 style="font-family: var(--font-display); margin:0;">{{ c.name }}</h1>
+          <div class="muted">{{ c.email }}
+            {% if c.banned %}<span class="chip rejected">disabled</span>{% else %}<span class="chip approved">active</span>{% endif %}
+          </div>
+        </div>
+        <div class="flex">
+          {% if c.banned %}
+            <form method="post" action="{{ url_for('brand_team_enable', uid=c.id) }}">
+              <button class="btn btn-primary">✓ {{ 'تفعيل' if lang=='ar' else 'Enable' }}</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('brand_team_disable', uid=c.id) }}" class="flex" style="gap:6px;">
+              <input type="text" name="reason" placeholder="{{ 'السبب (اختياري)' if lang=='ar' else 'Reason (optional)' }}" style="padding:8px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;font-size:13px;">
+              <button class="btn btn-danger">⊘ {{ 'تعطيل' if lang=='ar' else 'Disable' }}</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="kpi-grid mt-3" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="kpi"><div class="label">{{ 'الرصيد' if lang=='ar' else 'Balance' }}</div><div class="value">{{ fmt_money(c.balance_cents) }}</div></div>
+        <div class="kpi"><div class="label">{{ 'إجمالي الأرباح' if lang=='ar' else 'Lifetime earnings' }}</div><div class="value">{{ fmt_money(c.total_paid_cents) }}</div></div>
+        <div class="kpi"><div class="label">{{ 'تقديمات' if lang=='ar' else 'Submissions' }}</div><div class="value">{{ subs|length }}</div></div>
+      </div>
+
+      <div class="form-card mt-3">
+        <h3 style="font-family: var(--font-display); margin: 0 0 12px;">{{ 'إعادة تعيين كلمة المرور' if lang=='ar' else 'Reset password' }}</h3>
+        <form method="post" action="{{ url_for('brand_team_reset_password', uid=c.id) }}" class="flex" style="gap:8px;">
+          <input type="text" name="new_password" minlength="6" required placeholder="{{ 'كلمة مرور جديدة' if lang=='ar' else 'New password' }}" style="flex:1;padding:10px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;">
+          <button class="btn btn-primary">{{ 'تعيين' if lang=='ar' else 'Set' }}</button>
+        </form>
+        <div class="hint mt-1">{{ 'كلمة المرور الجديدة ستُعرض لك مرة واحدة — انسخها للمبدع.' if lang=='ar' else 'The new password will be displayed once — copy it to the creator.' }}</div>
+      </div>
+
+      {% if subs %}
+      <h3 style="font-family: var(--font-display); margin-top: 32px;">{{ 'آخر التقديمات' if lang=='ar' else 'Recent submissions' }}</h3>
+      <div class="table-card">
+        <table class="data">
+          <thead>
+            <tr><th>{{ 'الحملة' if lang=='ar' else 'Campaign' }}</th><th>{{ t('platform') }}</th><th>{{ 'مشاهدات' if lang=='ar' else 'Views' }}</th><th>{{ t('status') }}</th><th>{{ 'أرباح' if lang=='ar' else 'Earned' }}</th></tr>
+          </thead>
+          <tbody>
+            {% for s in subs %}
+            <tr>
+              <td>{{ s.campaign_title }}</td>
+              <td>{{ s.platform.upper() }}</td>
+              <td>{{ fmt_num(s.verified_views or s.self_views) }}</td>
+              <td><span class="chip {{ s.status }}">{{ t(s.status) }}</span></td>
+              <td>{{ fmt_money(s.earnings_cents) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

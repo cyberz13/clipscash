@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=5 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('wiz_3_title') }}</h1>
+    <form method="post" action="{{ url_for('camp_wiz_step', step=3) }}">
+      <div class="field">
+        <label>{{ 'المنصات المسموح بها' if lang=='ar' else 'Allowed platforms' }}</label>
+        <div class="checkbox-grid">
+          {% for p in platforms %}
+          <label class="checkbox-pill">
+            <input type="checkbox" name="platforms" value="{{ p }}" {% if state.platforms and p in state.platforms %}checked{% endif %}>
+            <span>{{ p.upper() }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field">
+        <label>{{ 'البريف الكامل' if lang=='ar' else 'Full brief' }}</label>
+        <textarea name="brief" rows="5" required>{{ state.brief or state.description or '' }}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>{{ 'هاشتاقات إلزامية' if lang=='ar' else 'Required hashtags' }}</label>
+          <input type="text" name="hashtags" value="{{ state.hashtags or '' }}" placeholder="#brand #campaign">
+        </div>
+        <div class="field">
+          <label>{{ 'إشارات' if lang=='ar' else 'Required mentions' }}</label>
+          <input type="text" name="mentions" value="{{ state.mentions or '' }}" placeholder="@brand">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>{{ 'أقل مدة (ث)' if lang=='ar' else 'Min duration (s)' }}</label>
+          <input type="number" name="min_duration" value="{{ state.min_duration or 15 }}" min="5">
+        </div>
+        <div class="field">
+          <label>{{ 'أقصى مدة (ث)' if lang=='ar' else 'Max duration (s)' }}</label>
+          <input type="number" name="max_duration" value="{{ state.max_duration or 90 }}" max="600">
+        </div>
+      </div>
+      <div class="field">
+        <label>{{ 'روابط أمثلة (اختياري)' if lang=='ar' else 'Example links (optional)' }}</label>
+        <textarea name="example_links" rows="2">{{ state.example_links or '' }}</textarea>
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('camp_wiz_back', step=2) }}" class="btn">← {{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

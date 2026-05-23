@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ t('nav_notifications') }}</h1>
+      <div class="form-card">
+        {% if notifs %}
+          {% for n in notifs %}
+            <a href="{{ n.link or '#' }}" class="notif-item {% if not n.is_read %}unread{% endif %}">
+              <div class="nf-title">{{ n.title }}</div>
+              {% if n.body %}<div class="nf-body">{{ n.body }}</div>{% endif %}
+              <div class="nf-time">{{ n.created_at }}</div>
+            </a>
+          {% endfor %}
+        {% else %}
+          <div class="empty"><h3>{{ 'لا إشعارات' if lang=='ar' else 'No notifications' }}</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

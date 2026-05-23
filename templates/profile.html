@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ t('nav_profile') }}</h1>
+      <div class="form-card">
+        <form method="post" enctype="multipart/form-data">
+          <div class="field">
+            <label>{{ t('auth_name') }}</label>
+            <input type="text" name="name" value="{{ u.name }}" required>
+          </div>
+          <div class="field">
+            <label>{{ 'النبذة' if lang=='ar' else 'Bio' }}</label>
+            <textarea name="bio" rows="3">{{ u.bio or '' }}</textarea>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'الدولة' if lang=='ar' else 'Country' }}</label>
+              <input type="text" name="country" value="{{ u.country or '' }}">
+            </div>
+            <div class="field">
+              <label>{{ 'الصورة الرمزية' if lang=='ar' else 'Avatar' }}</label>
+              <input type="file" name="avatar" accept="image/*">
+            </div>
+          </div>
+          <h3 style="font-family: var(--font-display); margin-top: 16px;">{{ 'الحسابات الاجتماعية' if lang=='ar' else 'Social handles' }}</h3>
+          <div class="field-row">
+            <div class="field"><label>TikTok</label><input type="text" name="tiktok" value="{{ socials.tiktok or '' }}" placeholder="@username"></div>
+            <div class="field"><label>Instagram</label><input type="text" name="instagram" value="{{ socials.instagram or '' }}" placeholder="@username"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>YouTube</label><input type="text" name="youtube" value="{{ socials.youtube or '' }}" placeholder="@channel"></div>
+            <div class="field"><label>X</label><input type="text" name="x" value="{{ socials.x or '' }}" placeholder="@username"></div>
+          </div>
+          <button class="btn btn-primary">{{ 'حفظ' if lang=='ar' else 'Save' }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

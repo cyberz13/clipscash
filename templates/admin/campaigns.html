@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">Campaigns</h1>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>ID</th><th>Title</th><th>Brand</th><th>Status</th><th>Budget</th><th>Spent</th><th>Featured</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td>{{ r.id }}</td>
+              <td><a href="{{ url_for('campaign_detail', cid=r.id) }}">{{ r.title }}</a></td>
+              <td>{{ r.brand_name }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_campaign_status', cid=r.id) }}" class="flex">
+                  <select name="status" onchange="this.form.submit()" style="padding:4px 8px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font-size:12px;">
+                    {% for s in ['active','paused','ended','draft'] %}
+                      <option value="{{ s }}" {% if s == r.status %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>{{ fmt_money(r.budget_cents) }}</td>
+              <td>{{ fmt_money(r.spent_cents) }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin_campaign_feature', cid=r.id) }}">
+                  <button class="btn btn-sm">{{ '★' if r.featured else '☆' }}</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('admin_campaign_delete', cid=r.id) }}" onsubmit="return confirm('Delete campaign and refund unspent budget?')">
+                  <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

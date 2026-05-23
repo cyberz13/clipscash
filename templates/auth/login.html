@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container-sm" style="max-width: 480px;">
+    <div class="form-card">
+      <h1>{{ t('auth_login') }}</h1>
+      <p class="sub">{{ t('hero_sub') }}</p>
+      <form method="post">
+        <div class="field">
+          <label>{{ t('auth_email') }}</label>
+          <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email" autofocus>
+        </div>
+        <div class="field">
+          <label>{{ t('auth_password') }}</label>
+          <input type="password" name="password" required autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-block">{{ t('auth_login') }}</button>
+      </form>
+      <p class="muted text-center mt-3">
+        <a href="{{ url_for('register') }}">{{ t('auth_new_here') }}</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display); margin: 0 0 6px;">{{ 'مرحباً' if lang=='ar' else 'Welcome' }}, {{ current_user.name }}</h1>
+      {% if brand %}
+        <div class="muted mb-3">{{ 'تنتمي إلى' if lang=='ar' else 'You belong to' }} <strong>{{ brand.name }}</strong></div>
+      {% endif %}
+
+      <div class="kpi-grid">
+        <div class="kpi accent">
+          <div class="label">{{ t('wallet_balance') }}</div>
+          <div class="value">{{ fmt_money(current_user.balance_cents) }}</div>
+          <a href="{{ url_for('creator_wallet') }}" class="muted" style="font-size:12px;">{{ t('wallet_withdraw') }} →</a>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('wallet_lifetime') }}</div>
+          <div class="value">{{ fmt_money(current_user.total_paid_cents) }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('approved') }}</div>
+          <div class="value">{{ counts.approved }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('pending') }}</div>
+          <div class="value">{{ counts.pending }}</div>
+        </div>
+      </div>
+
+      {% if open_campaigns %}
+      <div class="form-card mb-3">
+        <h3 style="font-family: var(--font-display); margin: 0 0 12px;">{{ 'حملات متاحة لك الآن' if lang=='ar' else "Campaigns open for you now" }}</h3>
+        <div class="campaigns-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+          {% for c in open_campaigns %}{% include "_campaign_card.html" %}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="table-card">
+        <div class="table-head">
+          <h3>{{ 'آخر التقديمات' if lang=='ar' else 'Recent submissions' }}</h3>
+          <a href="{{ url_for('creator_submissions') }}" class="muted">{{ t('cta_view_all') }}</a>
+        </div>
+        {% if subs %}
+        <table class="data">
+          <thead>
+            <tr>
+              <th>{{ 'الحملة' if lang=='ar' else 'Campaign' }}</th>
+              <th>{{ t('platform') }}</th>
+              <th>{{ t('status') }}</th>
+              <th>{{ 'الأرباح' if lang=='ar' else 'Earnings' }}</th>
+              <th>{{ 'التاريخ' if lang=='ar' else 'Date' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in subs %}
+            <tr>
+              <td>{{ s.campaign_title }} <span class="muted">— {{ s.brand_name }}</span></td>
+              <td>{{ s.platform.upper() }}</td>
+              <td><span class="chip {{ s.status }}">{{ t(s.status) }}</span></td>
+              <td>{{ fmt_money(s.earnings_cents) }}</td>
+              <td class="muted">{{ s.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <h3>{{ 'لم تقدّم بعد' if lang=='ar' else 'No submissions yet' }}</h3>
+          <p>{{ 'تصفّح الحملات وقدّم أول مشاركة.' if lang=='ar' else 'Browse campaigns and submit your first clip.' }}</p>
+          <a class="btn btn-primary mt-2" href="{{ url_for('creator_campaigns') }}">{{ 'الحملات المتاحة' if lang=='ar' else 'Available campaigns' }}</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

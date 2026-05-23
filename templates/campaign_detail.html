@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ c.title }} — {{ t('brand_name') }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="dash-grid" style="grid-template-columns: 1.6fr 1fr;">
+      <div>
+        <div class="campaign-image" style="border-radius: 22px; overflow: hidden; aspect-ratio: 16/9;">
+          {% if c.image_url %}<img src="{{ c.image_url }}" alt="">{% endif %}
+        </div>
+        <div style="margin-top:24px;">
+          <div class="campaign-brand">{{ c.brand_name }} · {{ cat_label(c.category) }}</div>
+          <h1 style="font-family: var(--font-display); margin: 8px 0 12px; font-size: 42px; letter-spacing: -.02em;">{{ c.title }}</h1>
+          <p class="muted" style="font-size: 16px; line-height: 1.7;">{{ c.description }}</p>
+
+          <h3 style="font-family: var(--font-display); margin-top: 32px;">{{ 'البريف' if lang=='ar' else 'The Brief' }}</h3>
+          <p class="muted" style="line-height: 1.7;">{{ c.brief }}</p>
+
+          {% if c.hashtags %}
+          <h3 style="font-family: var(--font-display); margin-top: 24px;">{{ 'الهاشتاقات' if lang=='ar' else 'Hashtags' }}</h3>
+          <p class="text-accent">{{ c.hashtags }}</p>
+          {% endif %}
+
+          <h3 style="font-family: var(--font-display); margin-top: 24px;">{{ 'المنصات' if lang=='ar' else 'Platforms' }}</h3>
+          <div class="flex" style="flex-wrap:wrap; gap:8px;">
+            {% for p in c.platforms.split(',') %}
+              <span class="chip">{{ p.upper() }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="form-card" style="position:sticky; top: 90px;">
+          <div class="campaign-rate" style="font-size:32px; margin-bottom: 6px;">
+            {% if c.payout_type == 'per_view' %}
+              {{ fmt_money(c.payout_rate_cents) }}<small> / 1K {{ 'مشاهدة' if lang=='ar' else 'views' }}</small>
+            {% elif c.payout_type == 'per_post' %}
+              {{ fmt_money(c.payout_rate_cents) }}<small> / {{ 'منشور' if lang=='ar' else 'post' }}</small>
+            {% elif c.payout_type == 'per_engagement' %}
+              {{ fmt_money(c.payout_rate_cents) }}<small> / {{ 'تفاعل' if lang=='ar' else 'engagement' }}</small>
+            {% endif %}
+          </div>
+          <div class="muted" style="margin-bottom: 20px;">{{ t('budget') }}: {{ fmt_money(c.budget_cents) }}</div>
+
+          {% set pct = (c.spent_cents / c.budget_cents * 100) if c.budget_cents else 0 %}
+          <div class="muted" style="font-size:12px;">{{ pct|round(0)|int }}% {{ t('spent') }}</div>
+          <div style="height:6px; background: var(--line); border-radius:999px; overflow:hidden; margin: 6px 0 18px;">
+            <div style="height:100%; width: {{ pct }}%; background: var(--accent);"></div>
+          </div>
+
+          {% if current_user and current_user.role == 'creator' %}
+            <a href="{{ url_for('submit_step1', cid=c.id) }}" class="btn btn-primary btn-block">{{ t('cta_apply') }}</a>
+          {% elif not current_user %}
+            <a href="{{ url_for('register', role='creator') }}" class="btn btn-primary btn-block">{{ t('cta_start_earning') }}</a>
+          {% else %}
+            <div class="muted text-center">{{ 'سجل كمبدع للتقديم' if lang=='ar' else 'Register as a creator to apply' }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

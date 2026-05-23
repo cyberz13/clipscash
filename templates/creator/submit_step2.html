@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=4 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('sub_wiz_2') }}</h1>
+    <p class="sub">{{ 'الصق رابط المنشور — سنكتشف المنصة تلقائياً.' if lang=='ar' else 'Paste your post URL — platform is auto-detected.' }}</p>
+    <form method="post" action="{{ url_for('submit_step', cid=c.id, step=2) }}">
+      <div class="field">
+        <label>{{ 'رابط الفيديو' if lang=='ar' else 'Video URL' }}</label>
+        <input type="url" name="video_url" value="{{ state.video_url or '' }}" placeholder="https://tiktok.com/@you/video/…" required>
+        <div class="hint">{{ 'يدعم: تيك توك، انستغرام ريلز، يوتيوب شورتس، X.' if lang=='ar' else 'Supports TikTok, Instagram Reels, YouTube Shorts, X.' }}</div>
+      </div>
+      <div class="field">
+        <label>{{ 'الوصف / Caption' if lang=='ar' else 'Caption (optional)' }}</label>
+        <textarea name="caption" rows="3">{{ state.caption or '' }}</textarea>
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('submit_back', cid=c.id, step=1) }}" class="btn">← {{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

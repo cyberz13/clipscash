@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('creator_submissions') }}" class="muted">← {{ t('dash_submissions') }}</a>
+      <h1 style="font-family: var(--font-display); margin: 8px 0;">📣 {{ 'دعم المعجبين' if lang=='ar' else 'Fan amplification' }}</h1>
+      <p class="muted">{{ s.campaign_title }} · {{ s.platform.upper() }}</p>
+
+      <div class="form-card mt-3">
+        <h3 style="font-family: var(--font-display); margin: 0 0 12px;">{{ '🔗 رابط المشاركة' if lang=='ar' else '🔗 Share link' }}</h3>
+        <p class="muted">{{ 'ضع هذا الرابط في bio حساباتك الاجتماعية. كل كليك = نقطة لمعجبك، ومشاهدة أعلى لك.' if lang=='ar' else 'Put this link in your social bios. Each click = a point for your fan + a tracked view for you.' }}</p>
+        <div class="flex" style="gap:8px;">
+          <input id="shareUrl" type="text" value="{{ share_url }}" readonly
+                 style="flex:1; padding:12px; background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:10px; font-family: ui-monospace,monospace; font-size:13px;">
+          <button class="btn btn-primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value); this.textContent='✓ {{ 'تم النسخ' if lang=='ar' else 'Copied' }}'">{{ '📋 نسخ' if lang=='ar' else '📋 Copy' }}</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid mt-3" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="kpi accent">
+          <div class="label">{{ 'إجمالي الكليكات' if lang=='ar' else 'Total clicks' }}</div>
+          <div class="value">{{ total.c or 0 }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ 'زائر فريد' if lang=='ar' else 'Unique visitors' }}</div>
+          <div class="value">{{ total.uniq or 0 }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ 'معجبون مسجَّلون' if lang=='ar' else 'Registered fans' }}</div>
+          <div class="value">{{ total.named_fans or 0 }}</div>
+        </div>
+      </div>
+
+      <div class="table-card mt-3">
+        <div class="table-head">
+          <h3>{{ '🏆 أفضل ١٠ معجبين' if lang=='ar' else '🏆 Top 10 fans' }}</h3>
+          <a href="{{ url_for('leaderboard_submission', sid=s.id) }}" class="muted">{{ 'القائمة الكاملة' if lang=='ar' else 'Full list' }} →</a>
+        </div>
+        {% if top_fans %}
+        <table class="data">
+          <thead><tr><th>#</th><th>{{ 'المعجب' if lang=='ar' else 'Fan' }}</th><th>{{ 'كليكات' if lang=='ar' else 'Clicks' }}</th></tr></thead>
+          <tbody>
+            {% for f in top_fans %}
+            <tr>
+              <td class="muted" style="font-family: var(--font-display); font-size: 18px;">{% if loop.index <= 3 %}{{ ['🥇','🥈','🥉'][loop.index0] }}{% else %}{{ loop.index }}{% endif %}</td>
+              <td>{{ f.name }}</td>
+              <td class="text-accent">{{ f.clicks }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <h3>{{ 'لا كليكات بعد' if lang=='ar' else 'No clicks yet' }}</h3>
+          <p>{{ 'شارك الرابط أعلاه. النتائج ستظهر فوراً.' if lang=='ar' else 'Share the link above. Results appear instantly.' }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

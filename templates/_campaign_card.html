@@ -1,0 +1,25 @@
+<a href="{{ url_for('campaign_detail', cid=c.id) }}" class="campaign-card">
+  <div class="campaign-image">
+    {% if c.image_url %}<img src="{{ c.image_url }}" alt="{{ c.title }}">{% endif %}
+    <div class="campaign-badge">{{ cat_label(c.category) }}</div>
+  </div>
+  <div class="campaign-body">
+    <div class="campaign-brand">{{ c.brand_name }}</div>
+    <h3 class="campaign-title">{{ c.title }}</h3>
+    <p class="campaign-desc">{{ c.description[:120] }}{% if c.description|length > 120 %}…{% endif %}</p>
+    <div class="campaign-foot">
+      <div class="campaign-rate">
+        {% if c.payout_type == 'per_view' %}
+          {{ fmt_money(c.payout_rate_cents) }} <small>/ 1K {{ 'مشاهدة' if lang=='ar' else 'views' }}</small>
+        {% elif c.payout_type == 'per_post' %}
+          {{ fmt_money(c.payout_rate_cents) }} <small>/ {{ 'منشور' if lang=='ar' else 'post' }}</small>
+        {% elif c.payout_type == 'per_engagement' %}
+          {{ fmt_money(c.payout_rate_cents) }} <small>/ {{ 'تفاعل' if lang=='ar' else 'engagement' }}</small>
+        {% else %}
+          {{ fmt_money(c.payout_rate_cents) }} <small>{{ 'مختلط' if lang=='ar' else 'hybrid' }}</small>
+        {% endif %}
+      </div>
+      <span class="view-brief">{{ t('cta_view_brief') }}</span>
+    </div>
+  </div>
+</a>

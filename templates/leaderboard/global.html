@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>{{ '🏆 Leaderboard العام' if lang=='ar' else '🏆 Global Leaderboard' }}</h2>
+        <p>{{ 'أكثر المبدعين دعماً خلال آخر ٣٠ يوماً.' if lang=='ar' else 'Most-supported creators in the last 30 days.' }}</p>
+      </div>
+      {% if not current_user %}
+        <a href="{{ url_for('fan_register') }}" class="btn btn-primary">{{ 'انضم كمعجب' if lang=='ar' else 'Join as fan' }}</a>
+      {% endif %}
+    </div>
+
+    <div class="table-card">
+      {% if rows %}
+      <table class="data">
+        <thead><tr><th>#</th><th>{{ 'المبدع' if lang=='ar' else 'Creator' }}</th><th>{{ 'كليكات' if lang=='ar' else 'Clicks' }}</th><th>{{ 'معجبون' if lang=='ar' else 'Fans' }}</th><th></th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td class="muted" style="font-family: var(--font-display); font-size: 18px;">{% if loop.index <= 3 %}{{ ['🥇','🥈','🥉'][loop.index0] }}{% else %}{{ loop.index }}{% endif %}</td>
+            <td><strong>{{ r.name }}</strong></td>
+            <td class="text-accent">{{ fmt_num(r.clicks) }}</td>
+            <td>{{ r.unique_fans }}</td>
+            <td><a href="{{ url_for('leaderboard_creator', creator_id=r.id) }}" class="muted">{{ 'تفاصيل' if lang=='ar' else 'View' }} →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty"><h3>{{ 'لا بيانات بعد' if lang=='ar' else 'No data yet' }}</h3></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

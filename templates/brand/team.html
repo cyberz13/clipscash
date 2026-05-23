@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <div class="flex flex-between">
+        <h1 style="font-family: var(--font-display); margin:0;">{{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</h1>
+        <a class="btn btn-primary" href="{{ url_for('brand_team_new') }}">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add creator' }}</a>
+      </div>
+      <p class="muted mt-1">{{ creators|length }} {{ 'مبدع في فريقك' if lang=='ar' else 'creators in your team' }}</p>
+
+      <div class="table-card mt-3">
+        {% if creators %}
+        <table class="data">
+          <thead>
+            <tr>
+              <th>{{ 'الاسم' if lang=='ar' else 'Name' }}</th>
+              <th>{{ 'البريد' if lang=='ar' else 'Email' }}</th>
+              <th>{{ 'الدولة' if lang=='ar' else 'Country' }}</th>
+              <th>{{ 'تقديمات' if lang=='ar' else 'Submissions' }}</th>
+              <th>{{ 'الحالة' if lang=='ar' else 'Status' }}</th>
+              <th>{{ 'انضم' if lang=='ar' else 'Joined' }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in creators %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td class="muted">{{ c.email }}</td>
+              <td>{{ c.country or '—' }}</td>
+              <td>{{ c.approved_subs }} / {{ c.total_subs }}</td>
+              <td>{% if c.banned %}<span class="chip rejected">disabled</span>{% else %}<span class="chip approved">active</span>{% endif %}</td>
+              <td class="muted">{{ c.created_at[:10] }}</td>
+              <td><a class="btn btn-sm" href="{{ url_for('brand_team_detail', uid=c.id) }}">{{ 'إدارة' if lang=='ar' else 'Manage' }}</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <h3>{{ 'لا مبدعين بعد' if lang=='ar' else 'No creators yet' }}</h3>
+          <p>{{ 'أضِف أول مبدع لفريقك.' if lang=='ar' else 'Add your first creator.' }}</p>
+          <a class="btn btn-primary mt-2" href="{{ url_for('brand_team_new') }}">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add creator' }}</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

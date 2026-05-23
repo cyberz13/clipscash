@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ 'الحملات المتاحة' if lang=='ar' else 'Available campaigns' }}</h1>
+      <p class="muted">{{ campaigns|length }} {{ 'حملة نشطة من' if lang=='ar' else 'active campaigns from' }} <strong>{{ brand.name }}</strong></p>
+
+      {% if campaigns %}
+      <div class="campaigns-grid">
+        {% for c in campaigns %}
+          {% include "_campaign_card.html" %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">
+        <h3>{{ 'لا حملات متاحة الآن' if lang=='ar' else 'No campaigns available yet' }}</h3>
+        <p>{{ 'ستظهر هنا حالما تطلق ' if lang=='ar' else "They'll appear here once " }}<strong>{{ brand.name }}</strong>{{ ' حملة جديدة.' if lang=='ar' else " launches one." }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

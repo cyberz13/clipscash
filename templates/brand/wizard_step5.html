@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=5 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('wiz_5_title') }}</h1>
+    <p class="sub">{{ 'راجع التفاصيل ثم أطلق الحملة أو احفظها كمسودة.' if lang=='ar' else 'Review the details, then launch or save as draft.' }}</p>
+
+    <div class="campaign-card" style="margin-bottom: 24px;">
+      {% if state.image_url %}<div class="campaign-image"><img src="{{ state.image_url }}" alt=""></div>{% endif %}
+      <div class="campaign-body">
+        <div class="campaign-brand">{{ cat_label(state.category) }}</div>
+        <h3 class="campaign-title">{{ state.title }}</h3>
+        <p class="campaign-desc">{{ state.description }}</p>
+        <div class="campaign-foot">
+          <div class="campaign-rate">{{ fmt_money(state.payout_rate_cents) }}</div>
+          <span class="muted">{{ state.platforms.upper() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div><strong class="muted">{{ 'نوع الدفع:' if lang=='ar' else 'Payout type:' }}</strong> {{ state.payout_type }}</div>
+      <div><strong class="muted">{{ t('budget') }}:</strong> {{ fmt_money(state.budget_cents) }}</div>
+    </div>
+    <div class="field-row mt-1">
+      <div><strong class="muted">{{ 'البدء:' if lang=='ar' else 'Starts:' }}</strong> {{ state.starts_at or '—' }}</div>
+      <div><strong class="muted">{{ 'الانتهاء:' if lang=='ar' else 'Ends:' }}</strong> {{ state.ends_at or '—' }}</div>
+    </div>
+
+    <form method="post" action="{{ url_for('camp_wiz_step', step=5) }}" class="form-actions" style="margin-top: 32px;">
+      <a href="{{ url_for('camp_wiz_back', step=4) }}" class="btn">← {{ t('wiz_back') }}</a>
+      <div class="flex">
+        <button name="action" value="draft" class="btn">{{ t('wiz_save_draft') }}</button>
+        <button name="action" value="launch" class="btn btn-primary">🚀 {{ t('wiz_launch') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

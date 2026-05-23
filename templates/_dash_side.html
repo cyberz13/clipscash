@@ -1,0 +1,28 @@
+<aside class="dash-side">
+  <h3>{% if current_user.role == 'brand' %}{{ 'لوحة البراند' if lang=='ar' else 'Brand panel' }}{% elif current_user.role == 'creator' %}{{ 'لوحة المبدع' if lang=='ar' else 'Creator panel' }}{% else %}{{ 'الأدمن' if lang=='ar' else 'Admin' }}{% endif %}</h3>
+  {% if current_user.role == 'creator' %}
+    <a href="{{ url_for('creator_dashboard') }}" class="{% if request.endpoint=='creator_dashboard' %}active{% endif %}">{{ t('dash_overview') }}</a>
+    <a href="{{ url_for('creator_campaigns') }}" class="{% if request.endpoint=='creator_campaigns' %}active{% endif %}">{{ 'الحملات المتاحة' if lang=='ar' else 'Available campaigns' }}</a>
+    <a href="{{ url_for('creator_submissions') }}" class="{% if request.endpoint=='creator_submissions' %}active{% endif %}">{{ t('dash_submissions') }}</a>
+    <a href="{{ url_for('creator_wallet') }}" class="{% if request.endpoint=='creator_wallet' %}active{% endif %}">{{ t('dash_wallet') }}</a>
+    <div class="divider"></div>
+    <a href="{{ url_for('profile') }}" class="{% if request.endpoint=='profile' %}active{% endif %}">{{ t('nav_profile') }}</a>
+    <a href="{{ url_for('notifications_page') }}">{{ t('nav_notifications') }}</a>
+  {% elif current_user.role == 'brand' %}
+    <a href="{{ url_for('brand_dashboard') }}" class="{% if request.endpoint=='brand_dashboard' %}active{% endif %}">{{ t('dash_overview') }}</a>
+    <a href="{{ url_for('brand_campaigns') }}" class="{% if request.endpoint in ['brand_campaigns','brand_campaign_detail'] %}active{% endif %}">{{ t('dash_campaigns') }}</a>
+    <a href="{{ url_for('camp_wiz_start') }}">+ {{ t('cta_launch_campaign') }}</a>
+    <a href="{{ url_for('brand_team') }}" class="{% if request.endpoint in ['brand_team','brand_team_new','brand_team_detail'] %}active{% endif %}">{{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</a>
+    <a href="{{ url_for('brand_wallet') }}" class="{% if request.endpoint=='brand_wallet' %}active{% endif %}">{{ t('dash_wallet') }}</a>
+    <div class="divider"></div>
+    <a href="{{ url_for('profile') }}" class="{% if request.endpoint=='profile' %}active{% endif %}">{{ t('nav_profile') }}</a>
+    <a href="{{ url_for('notifications_page') }}">{{ t('nav_notifications') }}</a>
+  {% else %}
+    <a href="{{ url_for('admin_index') }}" class="{% if request.endpoint=='admin_index' %}active{% endif %}">{{ t('dash_overview') }}</a>
+    <a href="{{ url_for('admin_users') }}" class="{% if request.endpoint in ['admin_users','admin_user_detail'] %}active{% endif %}">{{ 'المستخدمون' if lang=='ar' else 'Users' }}</a>
+    <a href="{{ url_for('admin_brand_new') }}" class="{% if request.endpoint=='admin_brand_new' %}active{% endif %}">+ {{ 'إضافة براند' if lang=='ar' else 'Add brand' }}</a>
+    <a href="{{ url_for('admin_campaigns') }}" class="{% if request.endpoint=='admin_campaigns' %}active{% endif %}">{{ t('dash_campaigns') }}</a>
+    <a href="{{ url_for('admin_submissions') }}" class="{% if request.endpoint=='admin_submissions' %}active{% endif %}">{{ t('dash_submissions') }}</a>
+    <a href="{{ url_for('admin_payouts') }}" class="{% if request.endpoint=='admin_payouts' %}active{% endif %}">{{ 'السحوبات' if lang=='ar' else 'Payouts' }}</a>
+  {% endif %}
+</aside>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=4 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('sub_wiz_4') }}</h1>
+    <p class="sub">{{ 'أدخل أحدث إحصائياتك الذاتية. سيتم التحقق منها من قبل البراند.' if lang=='ar' else 'Enter your latest self-reported stats. The brand will verify them.' }}</p>
+    <form method="post" action="{{ url_for('submit_step', cid=c.id, step=4) }}">
+      <div class="field-row" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="field"><label>{{ 'مشاهدات' if lang=='ar' else 'Views' }}</label><input type="number" name="self_views" min="0" required></div>
+        <div class="field"><label>{{ 'إعجابات' if lang=='ar' else 'Likes' }}</label><input type="number" name="self_likes" min="0" required></div>
+        <div class="field"><label>{{ 'تعليقات' if lang=='ar' else 'Comments' }}</label><input type="number" name="self_comments" min="0" required></div>
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('submit_back', cid=c.id, step=3) }}" class="btn">← {{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ 'إرسال التقديم' if lang=='ar' else 'Submit' }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

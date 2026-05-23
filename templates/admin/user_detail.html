@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('admin_users') }}" class="muted">← Users</a>
+      <div class="flex flex-between mt-1">
+        <div>
+          <h1 style="font-family: var(--font-display); margin: 0;">{{ u.name }}</h1>
+          <div class="muted">{{ u.email }} · <span class="chip">{{ u.role }}</span>
+            {% if u.banned %}<span class="chip rejected">BANNED</span>{% endif %}
+          </div>
+        </div>
+        <div class="flex">
+          {% if u.banned %}
+            <form method="post" action="{{ url_for('admin_unban_user', uid=u.id) }}">
+              <button class="btn btn-primary">✓ Unban</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('admin_ban_user', uid=u.id) }}" class="flex" style="gap:6px;">
+              <input type="text" name="reason" placeholder="Reason (optional)" style="padding:8px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;font-size:13px;">
+              <button class="btn btn-danger">⊘ Ban</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if u.banned %}
+      <div class="form-card mt-3" style="border-color: var(--danger);">
+        <strong style="color: var(--danger);">Account suspended</strong>
+        <div class="muted mt-1">{{ u.banned_reason or '(no reason)' }} — {{ u.banned_at }}</div>
+      </div>
+      {% endif %}
+
+      <div class="kpi-grid mt-3">
+        <div class="kpi accent"><div class="label">Balance</div><div class="value">{{ fmt_money(u.balance_cents) }}</div></div>
+        <div class="kpi"><div class="label">Lifetime paid</div><div class="value">{{ fmt_money(u.total_paid_cents) }}</div></div>
+        <div class="kpi"><div class="label">Country</div><div class="value" style="font-size:24px;">{{ u.country or '—' }}</div></div>
+        <div class="kpi"><div class="label">Joined</div><div class="value" style="font-size:18px;">{{ u.created_at[:10] }}</div></div>
+      </div>
+
+      <div class="insight-grid">
+        <div class="form-card">
+          <h3 style="font-family: var(--font-display); margin: 0 0 12px;">Adjust balance</h3>
+          <form method="post" action="{{ url_for('admin_adjust_balance', uid=u.id) }}">
+            <div class="field-row">
+              <div class="field">
+                <label>Amount (USD)</label>
+                <input type="number" name="amount" step="0.01" min="0.01" required>
+              </div>
+              <div class="field">
+                <label>Direction</label>
+                <select name="op">
+                  <option value="credit">+ Credit (add)</option>
+                  <option value="debit">− Debit (remove)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Note</label>
+              <input type="text" name="note" placeholder="reason / reference">
+            </div>
+            <button class="btn btn-primary">Apply</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3 style="font-family: var(--font-display); margin: 0 0 12px;">Reset password</h3>
+          <form method="post" action="{{ url_for('admin_reset_password', uid=u.id) }}">
+            <div class="field">
+              <label>New password (6+ chars)</label>
+              <input type="text" name="new_password" minlength="6" required>
+            </div>
+            <button class="btn">Set new password</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="form-card mt-3" style="border-color: var(--danger);">
+        <h3 style="font-family: var(--font-display); margin: 0 0 12px; color: var(--danger);">⚠ Danger zone</h3>
+        <p class="muted">Permanently deletes the user and all their data (campaigns, submissions, payouts). Cannot be undone.</p>
+        <form method="post" action="{{ url_for('admin_delete_user', uid=u.id) }}" onsubmit="return confirm('PERMANENTLY DELETE this user? All their data will be lost.')">
+          <div class="field">
+            <label>Type the user's email to confirm: <strong>{{ u.email }}</strong></label>
+            <input type="text" name="confirm_email" required>
+          </div>
+          <button class="btn btn-danger">Delete forever</button>
+        </form>
+      </div>
+
+      {% if u.role == 'brand' and campaigns %}
+      <h3 style="font-family: var(--font-display); margin-top: 32px;">Campaigns ({{ campaigns|length }})</h3>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>Title</th><th>Status</th><th>Budget</th><th>Spent</th></tr></thead>
+          <tbody>
+            {% for c in campaigns %}
+            <tr><td><a href="{{ url_for('campaign_detail', cid=c.id) }}">{{ c.title }}</a></td>
+                <td><span class="chip {{ c.status }}">{{ c.status }}</span></td>
+                <td>{{ fmt_money(c.budget_cents) }}</td>
+                <td>{{ fmt_money(c.spent_cents) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if u.role == 'creator' and submissions %}
+      <h3 style="font-family: var(--font-display); margin-top: 32px;">Submissions ({{ submissions|length }})</h3>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>Campaign</th><th>Platform</th><th>Status</th><th>Fraud</th><th>Earned</th></tr></thead>
+          <tbody>
+            {% for s in submissions %}
+            <tr><td>{{ s.campaign_title }}</td>
+                <td>{{ s.platform.upper() }}</td>
+                <td><span class="chip {{ s.status }}">{{ s.status }}</span></td>
+                <td>{{ s.fraud_score }}</td>
+                <td>{{ fmt_money(s.earnings_cents) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if payouts %}
+      <h3 style="font-family: var(--font-display); margin-top: 32px;">Payouts ({{ payouts|length }})</h3>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Status</th><th>Ref</th></tr></thead>
+          <tbody>
+            {% for p in payouts %}
+            <tr><td class="muted">{{ p.created_at[:16] }}</td>
+                <td>{{ p.method }}</td>
+                <td>{{ fmt_money(p.amount_cents) }}</td>
+                <td><span class="chip {{ p.status }}">{{ p.status }}</span></td>
+                <td class="muted">{{ p.reference or '—' }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if tx %}
+      <h3 style="font-family: var(--font-display); margin-top: 32px;">Wallet transactions</h3>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>Date</th><th>Kind</th><th>Amount</th><th>Note</th></tr></thead>
+          <tbody>
+            {% for x in tx %}
+            <tr><td class="muted">{{ x.created_at[:16] }}</td>
+                <td><span class="chip">{{ x.kind }}</span></td>
+                <td class="{% if x.amount_cents >= 0 %}text-accent{% endif %}">{{ '+' if x.amount_cents>=0 else '' }}{{ fmt_money(x.amount_cents) }}</td>
+                <td class="muted">{{ x.note or '' }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

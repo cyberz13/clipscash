@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>🏆 {{ creator.name }}</h2>
+        <p>{{ total.c or 0 }} {{ 'كليك من' if lang=='ar' else 'clicks from' }} {{ total.f or 0 }} {{ 'معجب مسجَّل' if lang=='ar' else 'registered fans' }}</p>
+      </div>
+      {% if not current_user %}
+        <a href="{{ url_for('fan_register') }}" class="btn btn-primary">{{ 'سجّل لتدخل القائمة' if lang=='ar' else 'Sign up to join' }}</a>
+      {% endif %}
+    </div>
+
+    <div class="table-card">
+      {% if rows %}
+      <table class="data">
+        <thead><tr><th>#</th><th>{{ 'المعجب' if lang=='ar' else 'Fan' }}</th><th>{{ 'كليكات' if lang=='ar' else 'Clicks' }}</th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr {% if current_user and r.id == current_user.id %}style="background: rgba(200,255,94,.08);"{% endif %}>
+            <td class="muted" style="font-family: var(--font-display); font-size: 18px;">{% if loop.index <= 3 %}{{ ['🥇','🥈','🥉'][loop.index0] }}{% else %}{{ loop.index }}{% endif %}</td>
+            <td><strong>{{ r.name or ('Anonymous' if lang=='en' else 'مجهول') }}</strong>{% if current_user and r.id == current_user.id %} <span class="chip approved">{{ 'أنت' if lang=='ar' else 'You' }}</span>{% endif %}</td>
+            <td class="text-accent">{{ r.clicks }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty"><h3>{{ 'لا معجبين مسجَّلين بعد' if lang=='ar' else 'No registered fans yet' }}</h3></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

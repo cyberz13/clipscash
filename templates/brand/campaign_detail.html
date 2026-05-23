@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <div class="flex flex-between">
+        <div>
+          <div class="campaign-brand">{{ cat_label(c.category) }} · <span class="chip {{ c.status }}">{{ t(c.status) }}</span></div>
+          <h1 style="font-family: var(--font-display); margin: 8px 0 0; font-size: 36px;">{{ c.title }}</h1>
+        </div>
+        <a href="{{ url_for('brand_insights', cid=c.id) }}" class="btn btn-primary">🤖 {{ t('ai_analyze') }}</a>
+      </div>
+
+      <div class="kpi-grid mt-3" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="kpi"><div class="label">{{ t('budget') }}</div><div class="value">{{ fmt_money(c.budget_cents) }}</div></div>
+        <div class="kpi"><div class="label">{{ t('spent') }}</div><div class="value">{{ fmt_money(c.spent_cents) }}</div></div>
+        <div class="kpi"><div class="label">{{ t('dash_submissions') }}</div><div class="value">{{ subs|length }}</div></div>
+        <div class="kpi accent"><div class="label">{{ t('reward') }}</div><div class="value" style="font-size:22px;">{{ fmt_money(c.payout_rate_cents) }}</div></div>
+      </div>
+
+      <div class="flex" style="border-bottom: 1px solid var(--line); margin-bottom: 20px;">
+        <a href="?tab=overview" class="btn {% if tab=='overview' %}btn-primary{% endif %}" style="border-radius: 0; border-top: none; border-left: none; border-right: none;">{{ t('dash_overview') }}</a>
+        <a href="?tab=submissions" class="btn {% if tab=='submissions' %}btn-primary{% endif %}" style="border-radius: 0; border-top: none; border-left: none; border-right: none;">{{ t('dash_submissions') }} ({{ subs|length }})</a>
+      </div>
+
+      {% if tab == 'submissions' %}
+        <div class="table-card">
+          {% if subs %}
+          <table class="data">
+            <thead>
+              <tr><th>{{ 'المبدع' if lang=='ar' else 'Creator' }}</th><th>{{ t('platform') }}</th><th>{{ 'مشاهدات' if lang=='ar' else 'Views' }}</th><th>{{ 'احتيال' if lang=='ar' else 'Fraud' }}</th><th>{{ t('status') }}</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for s in subs %}
+              <tr>
+                <td>{{ s.creator_name }}</td>
+                <td>{{ s.platform.upper() }}</td>
+                <td>{{ fmt_num(s.verified_views or s.self_views) }}</td>
+                <td>
+                  {% set band = 'safe' if s.fraud_score < 30 else ('suspicious' if s.fraud_score < 61 else 'reject') %}
+                  <span class="chip {% if band=='safe' %}approved{% elif band=='suspicious' %}pending{% else %}rejected{% endif %}">{{ s.fraud_score }}</span>
+                </td>
+                <td><span class="chip {{ s.status }}">{{ t(s.status) }}</span></td>
+                <td>
+                  {% if s.status == 'pending' %}
+                    <a href="{{ url_for('brand_review', sid=s.id) }}" class="btn btn-sm btn-primary">{{ 'مراجعة' if lang=='ar' else 'Review' }}</a>
+                  {% else %}
+                    <a href="{{ url_for('brand_review', sid=s.id) }}" class="muted">{{ 'عرض' if lang=='ar' else 'View' }} →</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty"><h3>{{ 'لا تقديمات بعد' if lang=='ar' else 'No submissions yet' }}</h3></div>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="form-card">
+          <h3 style="font-family: var(--font-display); margin: 0 0 12px;">{{ 'الوصف' if lang=='ar' else 'Description' }}</h3>
+          <p class="muted">{{ c.description }}</p>
+          <h3 style="font-family: var(--font-display); margin: 24px 0 12px;">{{ 'البريف' if lang=='ar' else 'Brief' }}</h3>
+          <p class="muted">{{ c.brief }}</p>
+          <div class="field-row mt-3">
+            <div><strong class="muted">{{ t('platform') }}:</strong> {{ c.platforms.upper() }}</div>
+            <div><strong class="muted">{{ 'الدفع' if lang=='ar' else 'Payout' }}:</strong> {{ c.payout_type }}</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

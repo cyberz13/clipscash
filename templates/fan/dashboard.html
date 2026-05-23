@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div style="padding: 32px 0;">
+    <h1 style="font-family: var(--font-display); margin: 0;">{{ 'مرحباً' if lang=='ar' else 'Welcome' }}, {{ current_user.name }}</h1>
+    <p class="muted">{{ 'لوحة المعجب' if lang=='ar' else 'Fan dashboard' }}</p>
+
+    <div class="kpi-grid mt-3" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="kpi accent">
+        <div class="label">{{ 'نقاطك (كليكات)' if lang=='ar' else 'Your points (clicks)' }}</div>
+        <div class="value">{{ stats.clicks or 0 }}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">{{ 'فيديوهات دعمتها' if lang=='ar' else 'Videos supported' }}</div>
+        <div class="value">{{ stats.videos or 0 }}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">{{ 'مبدعون مفضّلون' if lang=='ar' else 'Top creators' }}</div>
+        <div class="value">{{ top_creators|length }}</div>
+      </div>
+    </div>
+
+    <div class="table-card mt-3">
+      <div class="table-head">
+        <h3>{{ 'المبدعون الذين تدعمهم أكثر' if lang=='ar' else 'Creators you support most' }}</h3>
+        <a href="{{ url_for('leaderboard_global') }}" class="muted">{{ 'Leaderboard العام' if lang=='ar' else 'Global leaderboard' }} →</a>
+      </div>
+      {% if top_creators %}
+      <table class="data">
+        <thead><tr><th>#</th><th>{{ 'المبدع' if lang=='ar' else 'Creator' }}</th><th>{{ 'كليكاتك' if lang=='ar' else 'Your clicks' }}</th><th></th></tr></thead>
+        <tbody>
+          {% for c in top_creators %}
+          <tr>
+            <td class="muted">{{ loop.index }}</td>
+            <td><strong>{{ c.name }}</strong></td>
+            <td class="text-accent">{{ c.clicks }}</td>
+            <td><a href="{{ url_for('leaderboard_creator', creator_id=c.id) }}" class="muted">{{ 'مرتبتك' if lang=='ar' else 'Your rank' }} →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">
+        <h3>{{ 'ابدأ بدعم مبدعيك' if lang=='ar' else 'Start supporting creators' }}</h3>
+        <p>{{ 'اضغط روابط المشاركة التي يضعها المبدعون في bio حساباتهم لتُحسب نقاطك.' if lang=='ar' else 'Click the share links creators post in their bios to earn points.' }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

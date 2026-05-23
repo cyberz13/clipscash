@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">Users</h1>
+      <div class="table-card">
+        <table class="data">
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Balance</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ u.id }}</td><td>{{ u.name }}</td><td class="muted">{{ u.email }}</td>
+              <td><span class="chip">{{ u.role }}</span></td>
+              <td>{{ fmt_money(u.balance_cents) }}</td>
+              <td>{% if u.banned %}<span class="chip rejected">BANNED</span>{% else %}<span class="chip approved">active</span>{% endif %}</td>
+              <td class="muted">{{ u.created_at[:10] }}</td>
+              <td><a class="btn btn-sm" href="{{ url_for('admin_user_detail', uid=u.id) }}">Manage</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ t('dash_wallet') }}</h1>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="kpi accent">
+          <div class="label">{{ t('wallet_balance') }}</div>
+          <div class="value">{{ fmt_money(current_user.balance_cents) }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ 'إجمالي الإنفاق' if lang=='ar' else 'Total spent' }}</div>
+          <div class="value">
+            {% set spent = (tx | selectattr('amount_cents', 'lt', 0) | sum(attribute='amount_cents') | abs) %}
+            {{ fmt_money(spent) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card mt-3">
+        <h2>{{ t('wallet_topup') }}</h2>
+        <p class="sub">{{ 'وضع تجريبي — اتصال Stripe قريباً.' if lang=='ar' else 'Demo mode — Stripe integration coming soon.' }}</p>
+        <form method="post" action="{{ url_for('brand_topup') }}" class="flex">
+          <input type="number" name="amount" step="0.01" min="1" placeholder="100.00" style="flex:1; padding:12px; background: var(--bg); border:1px solid var(--line); color:var(--text); border-radius: 10px;">
+          <button class="btn btn-primary">+ {{ t('wallet_topup') }}</button>
+        </form>
+      </div>
+
+      <div class="table-card mt-3">
+        <div class="table-head"><h3>{{ t('wallet_tx') }}</h3></div>
+        {% if tx %}
+        <table class="data">
+          <thead><tr><th>{{ 'التاريخ' if lang=='ar' else 'Date' }}</th><th>{{ 'النوع' if lang=='ar' else 'Kind' }}</th><th>{{ 'المبلغ' if lang=='ar' else 'Amount' }}</th><th>{{ 'ملاحظة' if lang=='ar' else 'Note' }}</th></tr></thead>
+          <tbody>
+            {% for x in tx %}
+            <tr>
+              <td class="muted">{{ x.created_at[:16] }}</td>
+              <td><span class="chip">{{ x.kind }}</span></td>
+              <td class="{% if x.amount_cents >= 0 %}text-accent{% endif %}">{{ '+' if x.amount_cents>=0 else '' }}{{ fmt_money(x.amount_cents) }}</td>
+              <td class="muted">{{ x.note or '' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty"><h3>{{ t('no_results') }}</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

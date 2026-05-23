@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=5 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('wiz_4_title') }}</h1>
+    <p class="sub">{{ 'ميزانية الحملة تُحجز من محفظتك عند الإطلاق.' if lang=='ar' else 'Campaign budget is reserved from your wallet at launch.' }}</p>
+    <form method="post" action="{{ url_for('camp_wiz_step', step=4) }}">
+      <div class="field-row">
+        <div class="field">
+          <label>{{ 'الميزانية الإجمالية (USD)' if lang=='ar' else 'Total budget (USD)' }}</label>
+          <input type="number" name="budget" step="0.01" min="10" value="{{ (state.budget_cents/100) if state.budget_cents else '' }}" required>
+          <div class="hint">{{ 'الرصيد الحالي:' if lang=='ar' else 'Wallet balance:' }} <strong>{{ fmt_money(current_user.balance_cents) }}</strong></div>
+        </div>
+        <div class="field">
+          <label>{{ 'الحد الأدنى للدفع' if lang=='ar' else 'Min payout per submission' }}</label>
+          <input type="number" name="min_payout" step="0.01" min="0.10" value="{{ (state.min_payout_cents/100) if state.min_payout_cents else '1.00' }}">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>{{ 'تاريخ البدء' if lang=='ar' else 'Start date' }}</label>
+          <input type="date" name="starts_at" value="{{ state.starts_at or '' }}">
+        </div>
+        <div class="field">
+          <label>{{ 'تاريخ الانتهاء' if lang=='ar' else 'End date' }}</label>
+          <input type="date" name="ends_at" value="{{ state.ends_at or '' }}">
+        </div>
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('camp_wiz_back', step=3) }}" class="btn">← {{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

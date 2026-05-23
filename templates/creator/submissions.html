@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ t('dash_submissions') }}</h1>
+      <form class="filters" method="get">
+        <select name="status">
+          <option value="">{{ t('all') }}</option>
+          <option value="pending" {% if status_f=='pending' %}selected{% endif %}>{{ t('pending') }}</option>
+          <option value="approved" {% if status_f=='approved' %}selected{% endif %}>{{ t('approved') }}</option>
+          <option value="paid" {% if status_f=='paid' %}selected{% endif %}>{{ t('paid') }}</option>
+          <option value="rejected" {% if status_f=='rejected' %}selected{% endif %}>{{ t('rejected') }}</option>
+        </select>
+        <button class="btn btn-primary btn-sm">{{ t('search') }}</button>
+      </form>
+
+      <div class="table-card">
+        {% if subs %}
+        <table class="data">
+          <thead>
+            <tr>
+              <th>{{ 'الحملة' if lang=='ar' else 'Campaign' }}</th>
+              <th>{{ t('platform') }}</th>
+              <th>{{ 'مشاهدات' if lang=='ar' else 'Views' }}</th>
+              <th>{{ t('status') }}</th>
+              <th>{{ 'الأرباح' if lang=='ar' else 'Earnings' }}</th>
+              <th>{{ 'الفيديو' if lang=='ar' else 'Video' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in subs %}
+            <tr>
+              <td>{{ s.campaign_title }}<br><span class="muted">{{ s.brand_name }}</span></td>
+              <td>{{ s.platform.upper() }}</td>
+              <td>{{ fmt_num(s.verified_views or s.self_views) }}</td>
+              <td><span class="chip {{ s.status }}">{{ t(s.status) }}</span>
+                  {% if s.review_note %}<div class="muted" style="font-size:11px;margin-top:4px;">{{ s.review_note }}</div>{% endif %}
+              </td>
+              <td>{{ fmt_money(s.earnings_cents) }}</td>
+              <td>
+                <a href="{{ s.video_url }}" target="_blank" class="text-accent" title="{{ 'فتح الفيديو' if lang=='ar' else 'Open video' }}">↗</a>
+                <a href="{{ url_for('creator_amplify', sid=s.id) }}" class="text-accent" title="{{ 'دعم المعجبين' if lang=='ar' else 'Fan amplification' }}" style="margin-inline-start:8px;">📣</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty"><h3>{{ t('no_results') }}</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

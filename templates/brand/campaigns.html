@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <div class="flex flex-between">
+        <h1 style="font-family: var(--font-display); margin:0;">{{ t('dash_campaigns') }}</h1>
+        <a class="btn btn-primary" href="{{ url_for('camp_wiz_start') }}">+ {{ t('cta_launch_campaign') }}</a>
+      </div>
+
+      <div class="campaigns-grid mt-3">
+        {% for c in campaigns %}
+          <a class="campaign-card" href="{{ url_for('brand_campaign_detail', cid=c.id) }}">
+            <div class="campaign-image">
+              {% if c.image_url %}<img src="{{ c.image_url }}" alt="">{% endif %}
+              <div class="campaign-badge">{{ t(c.status) }}</div>
+            </div>
+            <div class="campaign-body">
+              <div class="campaign-brand">{{ cat_label(c.category) }}</div>
+              <h3 class="campaign-title">{{ c.title }}</h3>
+              <div class="campaign-foot">
+                <div class="campaign-rate">{{ fmt_money(c.spent_cents) }} <small>/ {{ fmt_money(c.budget_cents) }}</small></div>
+                <span class="view-brief">{{ 'تفاصيل ←' if lang=='ar' else 'OPEN →' }}</span>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

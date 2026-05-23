@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('brand_team') }}" class="muted">← {{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</a>
+      <h1 style="font-family: var(--font-display);">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add a creator' }}</h1>
+
+      <div class="form-card">
+        <p class="sub">{{ 'سيستلم المبدع رابط الدخول وبيانات الحساب. أنت من يحدد كلمة المرور الأولى.' if lang=='ar' else 'You set the initial password. Share the credentials with the creator.' }}</p>
+        <form method="post">
+          <div class="field">
+            <label>{{ 'الاسم الكامل' if lang=='ar' else 'Full name' }}</label>
+            <input type="text" name="name" value="{{ name or '' }}" required autofocus>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'البريد الإلكتروني' if lang=='ar' else 'Email' }}</label>
+              <input type="email" name="email" value="{{ email or '' }}" required>
+            </div>
+            <div class="field">
+              <label>{{ 'الدولة (اختياري)' if lang=='ar' else 'Country (optional)' }}</label>
+              <input type="text" name="country" value="{{ country or '' }}" placeholder="SA / EG / AE …">
+            </div>
+          </div>
+          <div class="field">
+            <label>{{ 'كلمة المرور الأولية' if lang=='ar' else 'Initial password' }}</label>
+            <input type="text" name="password" minlength="6" required id="pw">
+            <div class="hint">{{ '٦ أحرف أو أكثر — سيستطيع المبدع تغييرها لاحقاً.' if lang=='ar' else '6+ chars — the creator can change it later.' }}</div>
+            <button type="button" class="btn btn-sm mt-1" onclick="document.getElementById('pw').value = Math.random().toString(36).slice(2,10) + '!' + Math.floor(Math.random()*100)">{{ 'توليد عشوائي' if lang=='ar' else 'Generate' }}</button>
+          </div>
+          <div class="form-actions">
+            <a href="{{ url_for('brand_team') }}" class="btn">{{ 'إلغاء' if lang=='ar' else 'Cancel' }}</a>
+            <button class="btn btn-primary">{{ 'إضافة المبدع' if lang=='ar' else 'Add creator' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

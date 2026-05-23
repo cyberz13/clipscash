@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wizard-shell">
+  {% with total=4 %}{% include "_wiz_progress.html" %}{% endwith %}
+  <div class="form-card">
+    <h1>{{ t('sub_wiz_1') }}</h1>
+    <p class="sub">{{ c.title }} — {{ c.brand_name }}</p>
+
+    <h3 style="font-family: var(--font-display); margin-top: 16px;">{{ 'البريف' if lang=='ar' else 'Brief' }}</h3>
+    <p class="muted" style="line-height: 1.7;">{{ c.brief }}</p>
+
+    <h3 style="font-family: var(--font-display); margin-top: 16px;">{{ 'قائمة التأهل' if lang=='ar' else 'Eligibility checklist' }}</h3>
+    <form method="post" action="{{ url_for('submit_step', cid=c.id, step=1) }}">
+      <div class="field">
+        <label class="checkbox-pill">
+          <input type="checkbox" required>
+          <span>{{ 'سأنشر على إحدى المنصات المطلوبة:' if lang=='ar' else 'I will post on one of the required platforms:' }} <strong>{{ c.platforms.upper() }}</strong></span>
+        </label>
+        <label class="checkbox-pill mt-1">
+          <input type="checkbox" required>
+          <span>{{ 'سأتبع البريف وأشير إلى البراند.' if lang=='ar' else 'I will follow the brief and tag the brand.' }}</span>
+        </label>
+        <label class="checkbox-pill mt-1">
+          <input type="checkbox" name="agree" required>
+          <span>{{ 'أوافق على شروط المنصة.' if lang=='ar' else 'I agree to the platform terms.' }}</span>
+        </label>
+      </div>
+      <div class="form-actions">
+        <a href="{{ url_for('campaign_detail', cid=c.id) }}" class="btn">{{ t('wiz_back') }}</a>
+        <button class="btn btn-primary">{{ t('wiz_next') }} →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

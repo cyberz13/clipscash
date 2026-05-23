@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div style="padding: 32px 0 16px;">
+    <a href="{{ url_for('brand_campaign_detail', cid=s.campaign_id, tab='submissions') }}" class="muted">← {{ s.campaign_title }}</a>
+    <h1 style="font-family: var(--font-display); margin: 8px 0;">{{ 'مراجعة تقديم' if lang=='ar' else 'Review submission' }} #{{ s.id }}</h1>
+  </div>
+
+  {% set band = 'safe' if s.fraud_score < 30 else ('suspicious' if s.fraud_score < 61 else 'reject') %}
+
+  <div class="review-grid">
+
+    <!-- LEFT: video preview -->
+    <div class="review-col">
+      <h3>{{ t('review_video') }} — {{ s.platform.upper() }}</h3>
+      <div class="video-preview">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <div class="muted" style="font-size:13px;">{{ 'افتح الفيديو على' if lang=='ar' else 'Open video on' }} {{ s.platform.upper() }}</div>
+        <a href="{{ s.video_url }}" target="_blank" rel="noopener">{{ s.video_url }}</a>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <div class="muted" style="font-size:12px; text-transform: uppercase; letter-spacing: .1em;">{{ 'المبدع' if lang=='ar' else 'Creator' }}</div>
+        <div style="font-family: var(--font-display); font-size: 20px; margin-top: 4px;">{{ s.creator_name }}</div>
+        <div class="muted" style="font-size: 12px;">
+          {{ 'منذ' if lang=='ar' else 'Since' }} {{ s.creator_since[:10] }} ·
+          {{ creator_stats.approved or 0 }} {{ t('approved') }} · {{ creator_stats.rejected or 0 }} {{ t('rejected') }}
+        </div>
+
+        {% if trust == 'trusted' %}
+          <span class="chip approved mt-1">✓ {{ 'موثوق' if lang=='ar' else 'Trusted' }}</span>
+        {% elif trust == 'blocked' %}
+          <span class="chip rejected mt-1">✕ {{ 'محظور' if lang=='ar' else 'Blocked' }}</span>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('brand_mark_creator', creator_id=s.creator_uid) }}" class="flex mt-2" style="gap: 6px;">
+          <input type="hidden" name="next" value="{{ url_for('brand_review', sid=s.id) }}">
+          {% if trust != 'trusted' %}
+            <button name="mark" value="trusted" class="btn btn-sm">★ {{ t('review_trust') }}</button>
+          {% endif %}
+          {% if trust != 'blocked' %}
+            <button name="mark" value="blocked" class="btn btn-sm btn-danger">⊘ {{ t('review_block') }}</button>
+          {% endif %}
+          {% if trust %}
+            <button name="mark" value="clear" class="btn btn-sm">{{ 'مسح' if lang=='ar' else 'Clear' }}</button>
+          {% endif %}
+        </form>
+      </div>
+
+      {% if s.caption %}
+      <div style="margin-top: 16px;">
+        <div class="muted" style="font-size:12px;">CAPTION</div>
+        <div style="font-size: 13px; margin-top: 4px;">{{ s.caption }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- MIDDLE: proof + self stats -->
+    <div class="review-col">
+      <h3>{{ t('review_proof') }}</h3>
+      <div class="proof-grid">
+        {% for url in [s.proof_url_1, s.proof_url_2, s.proof_url_3] %}
+          {% if url %}<a href="{{ url }}" target="_blank"><img src="{{ url }}" alt=""></a>{% else %}<div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px;">—</div>{% endif %}
+        {% endfor %}
+      </div>
+
+      <h3 style="margin-top: 24px;">{{ 'إحصائيات المبدع الذاتية' if lang=='ar' else 'Self-reported stats' }}</h3>
+      <div class="self-stats">
+        <div class="self-stat"><div class="v">{{ fmt_num(s.self_views) }}</div><div class="l">{{ 'مشاهدات' if lang=='ar' else 'Views' }}</div></div>
+        <div class="self-stat"><div class="v">{{ fmt_num(s.self_likes) }}</div><div class="l">{{ 'إعجابات' if lang=='ar' else 'Likes' }}</div></div>
+        <div class="self-stat"><div class="v">{{ fmt_num(s.self_comments) }}</div><div class="l">{{ 'تعليقات' if lang=='ar' else 'Comments' }}</div></div>
+      </div>
+
+      <div class="fraud-meter fraud-{{ band }}" style="margin-top: 20px;">
+        <div class="label-row">
+          <span>{{ t('review_fraud_score') }}</span>
+          <span class="fraud-band">{{ band }}</span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width: {{ s.fraud_score }}%;"></div></div>
+        <div class="label-row"><span>{{ s.fraud_score }}/100</span><span class="muted">Safe &lt;30 · Susp 30-60 · Reject ≥61</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: verification panel -->
+    <div class="review-col">
+      <h3>{{ t('review_verify') }}</h3>
+      {% if s.status != 'pending' %}
+        <div class="empty">
+          <span class="chip {{ s.status }}">{{ t(s.status) }}</span>
+          <p class="muted mt-2">{{ 'تمت المراجعة بالفعل.' if lang=='ar' else 'Already reviewed.' }}</p>
+          {% if s.review_note %}<p class="muted" style="font-size: 13px;">"{{ s.review_note }}"</p>{% endif %}
+          {% if s.earnings_cents > 0 %}<div class="payout-display">{{ fmt_money(s.earnings_cents) }}</div>{% endif %}
+        </div>
+      {% else %}
+      <form method="post" id="approveForm" action="{{ url_for('brand_approve', sid=s.id) }}">
+        <div class="field">
+          <label>{{ t('review_verified_views') }}</label>
+          <input type="number" name="verified_views" id="vv" value="{{ s.self_views }}" min="0">
+        </div>
+        <div class="field">
+          <label>{{ t('review_verified_likes') }}</label>
+          <input type="number" name="verified_likes" id="vl" value="{{ s.self_likes }}" min="0">
+        </div>
+        <div class="field">
+          <label>{{ t('review_verified_comments') }}</label>
+          <input type="number" name="verified_comments" id="vc" value="{{ s.self_comments }}" min="0">
+        </div>
+        <div class="payout-display" id="payoutPreview">{{ fmt_money(0) }}</div>
+        <div class="field">
+          <label>{{ 'ملاحظة (اختياري)' if lang=='ar' else 'Note (optional)' }}</label>
+          <textarea name="note" rows="2"></textarea>
+        </div>
+        <button class="btn btn-primary btn-block">✓ {{ t('review_approve') }}</button>
+      </form>
+
+      <form method="post" action="{{ url_for('brand_reject', sid=s.id) }}" class="mt-2">
+        <div class="field">
+          <input type="text" name="note" placeholder="{{ 'سبب الرفض' if lang=='ar' else 'Rejection reason' }}">
+        </div>
+        <button class="btn btn-danger btn-block">✕ {{ t('review_reject') }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if s.status == 'pending' %}
+<script>
+const vv = document.getElementById('vv');
+const vl = document.getElementById('vl');
+const vc = document.getElementById('vc');
+const out = document.getElementById('payoutPreview');
+async function refresh(){
+  const r = await fetch('/api/payout-preview', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      views: +vv.value || 0, likes: +vl.value || 0, comments: +vc.value || 0,
+      payout_type: '{{ s.payout_type }}', rate_cents: {{ s.payout_rate_cents }}
+    })
+  });
+  const j = await r.json();
+  out.textContent = j.payout_display;
+}
+[vv, vl, vc].forEach(el => el.addEventListener('input', refresh));
+refresh();
+</script>
+{% endif %}
+{% endblock %}

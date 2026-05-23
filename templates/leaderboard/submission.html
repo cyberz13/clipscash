@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>🏆 {{ 'دعم فيديو' if lang=='ar' else 'Video support' }} — {{ s.creator_name }}</h2>
+        <p>{{ s.platform.upper() }} · {{ total.c or 0 }} {{ 'كليك' if lang=='ar' else 'clicks' }} · {{ total.uniq or 0 }} {{ 'زائر فريد' if lang=='ar' else 'unique visitors' }}</p>
+      </div>
+      <a href="{{ url_for('view_share', token=s.share_token) }}" class="btn btn-primary" target="_blank">{{ '▶ شاهد الفيديو' if lang=='ar' else '▶ Watch video' }}</a>
+    </div>
+
+    <div class="table-card">
+      {% if rows %}
+      <table class="data">
+        <thead><tr><th>#</th><th>{{ 'المعجب' if lang=='ar' else 'Fan' }}</th><th>{{ 'كليكات' if lang=='ar' else 'Clicks' }}</th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr {% if current_user and r.id == current_user.id %}style="background: rgba(200,255,94,.08);"{% endif %}>
+            <td class="muted" style="font-family: var(--font-display); font-size: 18px;">{% if loop.index <= 3 %}{{ ['🥇','🥈','🥉'][loop.index0] }}{% else %}{{ loop.index }}{% endif %}</td>
+            <td><strong>{{ r.name or ('Anonymous' if lang=='en' else 'مجهول') }}</strong>{% if current_user and r.id == current_user.id %} <span class="chip approved">{{ 'أنت' if lang=='ar' else 'You' }}</span>{% endif %}</td>
+            <td class="text-accent">{{ r.clicks }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty"><h3>{{ 'لم يدعم هذا الفيديو معجبون مسجَّلون بعد' if lang=='ar' else 'No registered fans have supported this video yet' }}</h3></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

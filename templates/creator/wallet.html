@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ t('dash_wallet') }}</h1>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="kpi accent">
+          <div class="label">{{ t('wallet_balance') }}</div>
+          <div class="value">{{ fmt_money(current_user.balance_cents) }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('wallet_lifetime') }}</div>
+          <div class="value">{{ fmt_money(current_user.total_paid_cents) }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('wallet_pending') }}</div>
+          <div class="value">{{ fmt_money(current_user.pending_cents) }}</div>
+        </div>
+      </div>
+
+      <div class="form-card mt-3">
+        <h2>{{ t('wallet_withdraw') }}</h2>
+        <p class="sub">{{ 'الحد الأدنى ١٠$' if lang=='ar' else 'Minimum $10 withdrawal' }}</p>
+        <form method="post" action="{{ url_for('creator_withdraw') }}" id="withdrawForm">
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'المبلغ' if lang=='ar' else 'Amount (USD)' }}</label>
+              <input type="number" name="amount" step="0.01" min="10" required>
+            </div>
+            <div class="field">
+              <label>{{ 'طريقة السحب' if lang=='ar' else 'Method' }}</label>
+              <select name="method" id="payoutMethod">
+                <option value="bank">{{ 'تحويل بنكي (IBAN)' if lang=='ar' else 'Bank transfer (IBAN)' }}</option>
+                <option value="paypal">PayPal</option>
+                <option value="wise">Wise</option>
+                <option value="usdt">USDT (TRC20/ERC20)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Generic details (paypal / wise / usdt) -->
+          <div class="field" data-method-group="generic">
+            <label data-method-label></label>
+            <input type="text" name="details" data-method-placeholder>
+            <div class="hint" data-method-hint></div>
+          </div>
+
+          <!-- Bank fields -->
+          <div data-method-group="bank">
+            <div class="field-row">
+              <div class="field">
+                <label>{{ 'رقم الآيبان (IBAN)' if lang=='ar' else 'IBAN' }}</label>
+                <input type="text" name="iban" placeholder="SA0380000000608010167519" style="font-family: ui-monospace, monospace; letter-spacing: 1px;">
+                <div class="hint">{{ 'بدون مسافات. سيتحقق من صحته تلقائياً.' if lang=='ar' else 'No spaces. Validated automatically.' }}</div>
+              </div>
+              <div class="field">
+                <label>{{ 'اسم البنك' if lang=='ar' else 'Bank name' }}</label>
+                <input type="text" name="bank_name" placeholder="{{ 'الراجحي / الأهلي / الرياض ...' if lang=='ar' else 'Al Rajhi / SNB / Riyad Bank ...' }}">
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>{{ 'اسم المستفيد (مطابق للبنك)' if lang=='ar' else 'Beneficiary name (matches bank)' }}</label>
+                <input type="text" name="beneficiary">
+              </div>
+              <div class="field">
+                <label>SWIFT / BIC <span class="muted">({{ 'اختياري للسعودية' if lang=='ar' else 'optional for KSA' }})</span></label>
+                <input type="text" name="swift" placeholder="RJHISARI" style="font-family: ui-monospace, monospace;">
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary">{{ t('wallet_withdraw') }}</button>
+        </form>
+      </div>
+
+      <script>
+      (function(){
+        const sel = document.getElementById('payoutMethod');
+        const groupGen = document.querySelector('[data-method-group="generic"]');
+        const groupBank = document.querySelector('[data-method-group="bank"]');
+        const lbl = document.querySelector('[data-method-label]');
+        const inp = document.querySelector('[name="details"]');
+        const hint = document.querySelector('[data-method-hint]');
+        const lang = document.documentElement.lang;
+        const labels = {
+          paypal: { lab: lang==='ar' ? 'البريد الإلكتروني لـPayPal' : 'PayPal email', ph: 'you@example.com', hint: '' },
+          wise:   { lab: lang==='ar' ? 'بريد Wise أو رقم الحساب' : 'Wise email or account ID', ph: 'you@wise.com', hint: '' },
+          usdt:   { lab: lang==='ar' ? 'عنوان محفظة USDT' : 'USDT wallet address', ph: 'TXyz... or 0x...', hint: lang==='ar' ? 'TRC20 (موصى به) أو ERC20' : 'TRC20 (recommended) or ERC20' },
+        };
+        function refresh(){
+          const m = sel.value;
+          if (m === 'bank') {
+            groupGen.style.display = 'none';
+            groupBank.style.display = '';
+            groupGen.querySelectorAll('input').forEach(el => el.required = false);
+            groupBank.querySelectorAll('input[name=iban],input[name=bank_name],input[name=beneficiary]').forEach(el => el.required = true);
+          } else {
+            groupBank.style.display = 'none';
+            groupGen.style.display = '';
+            const cfg = labels[m] || labels.paypal;
+            lbl.textContent = cfg.lab;
+            inp.placeholder = cfg.ph;
+            inp.required = true;
+            hint.textContent = cfg.hint;
+            groupBank.querySelectorAll('input').forEach(el => el.required = false);
+          }
+        }
+        sel.addEventListener('change', refresh);
+        refresh();
+      })();
+      </script>
+
+      <div class="table-card mt-3">
+        <div class="table-head"><h3>{{ t('wallet_tx') }}</h3></div>
+        {% if tx %}
+        <table class="data">
+          <thead><tr><th>{{ 'التاريخ' if lang=='ar' else 'Date' }}</th><th>{{ 'النوع' if lang=='ar' else 'Kind' }}</th><th>{{ 'المبلغ' if lang=='ar' else 'Amount' }}</th><th>{{ 'ملاحظة' if lang=='ar' else 'Note' }}</th></tr></thead>
+          <tbody>
+            {% for x in tx %}
+            <tr>
+              <td class="muted">{{ x.created_at[:16] }}</td>
+              <td><span class="chip">{{ x.kind }}</span></td>
+              <td class="{% if x.amount_cents >= 0 %}text-accent{% endif %}">{{ '+' if x.amount_cents>=0 else '' }}{{ fmt_money(x.amount_cents) }}</td>
+              <td class="muted">{{ x.note or '' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty"><h3>{{ t('no_results') }}</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

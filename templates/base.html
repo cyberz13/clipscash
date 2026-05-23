@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if rtl else 'ltr' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t('brand_name') }} — {{ t('tagline') }}{% endblock %}</title>
+  <meta name="description" content="{{ t('hero_sub') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+</head>
+<body>
+
+{% block splash %}{% endblock %}
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="{{ url_for('dashboard') if current_user else url_for('login') }}" class="brand-logo">CLIPS<span>CASH</span></a>
+    <div class="nav-links"></div>
+    <div class="nav-right">
+      <a class="lang-toggle" href="{{ url_for('set_lang', l='en' if lang=='ar' else 'ar') }}">{{ t('switch_lang') }}</a>
+      {% if current_user %}
+        <div style="position:relative;">
+          <button class="notif-bell" id="notif-bell" aria-label="Notifications">
+            🔔
+            {% if unread_count %}<span class="notif-badge" id="notif-badge">{{ unread_count }}</span>{% endif %}
+          </button>
+          <div class="notif-panel" id="notif-panel"></div>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('dashboard') }}">{{ t('nav_dashboard') }}</a>
+        <span class="muted" style="font-size:12px;">{{ current_user.name }}</span>
+        <form method="post" action="{{ url_for('logout') }}" style="display:inline">
+          <button class="btn btn-sm">{{ t('nav_logout') }}</button>
+        </form>
+      {% else %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('login') }}">{{ t('nav_signin') }}</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+{% with msgs = get_flashed_messages(with_categories=true) %}
+{% if msgs %}
+<div class="flash-list">
+{% for cat, msg in msgs %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="brand-logo" style="font-size:18px">CLIPS<span>CASH</span></div>
+      <div class="muted" style="margin-top:6px">{{ t('footer_copy') }}</div>
+    </div>
+  </div>
+</footer>
+
+<meta name="csrf-token" content="{{ csrf_token }}">
+<script>
+// Auto-inject CSRF hidden input into every <form method="POST">
+(function(){
+  const token = document.querySelector('meta[name="csrf-token"]').content;
+  document.querySelectorAll('form').forEach(f => {
+    if ((f.method || '').toLowerCase() !== 'post') return;
+    if (f.querySelector('input[name="_csrf"]')) return;
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = '_csrf'; inp.value = token;
+    f.appendChild(inp);
+  });
+  // Auto-attach to fetch() POSTs as a header
+  const origFetch = window.fetch;
+  window.fetch = function(input, init = {}) {
+    const method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+    if (['POST','PUT','PATCH','DELETE'].includes(method)) {
+      init.headers = Object.assign({}, init.headers || {}, {'X-CSRF-Token': token});
+    }
+    return origFetch.call(this, input, init);
+  };
+})();
+{% if current_user %}
+(function(){
+  const bell = document.getElementById('notif-bell');
+  const panel = document.getElementById('notif-panel');
+  const badge = document.getElementById('notif-badge');
+  if (!bell) return;
+
+  bell.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (panel.classList.contains('open')) {
+      panel.classList.remove('open');
+      return;
+    }
+    const r = await fetch('/api/notifications');
+    const items = await r.json();
+    if (!items.length) {
+      panel.innerHTML = `<div class="empty" style="padding:24px"><div class="muted">No notifications</div></div>`;
+    } else {
+      panel.innerHTML = items.map(n => `
+        <a class="notif-item ${n.is_read ? '' : 'unread'}" href="${n.link || '#'}">
+          <div class="nf-title">${escapeHtml(n.title)}</div>
+          ${n.body ? `<div class="nf-body">${escapeHtml(n.body)}</div>` : ''}
+          <div class="nf-time">${n.created_at}</div>
+        </a>`).join('');
+    }
+    panel.classList.add('open');
+    await fetch('/api/notifications/read', {method:'POST'});
+    if (badge) badge.remove();
+  });
+  document.addEventListener('click', () => panel.classList.remove('open'));
+  panel.addEventListener('click', e => e.stopPropagation());
+
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+})();
+{% endif %}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

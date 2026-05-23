@@ -1,0 +1,28 @@
+# Secrets and runtime state
+.env
+.secret_key
+clipscash.db
+clipscash.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Uploaded files (user content — should live on persistent disk / object storage)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Reference downloads
+_milk_ref.js

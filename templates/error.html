@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container-sm text-center" style="padding: 100px 20px;">
+    <div style="font-family: var(--font-display); font-size: 120px; color: var(--accent); line-height: 1;">{{ code }}</div>
+    <h1 style="font-family: var(--font-display); margin: 16px 0;">{{ msg }}</h1>
+    <a href="/" class="btn btn-primary mt-3">{{ 'العودة للرئيسية' if lang=='ar' else 'Back to home' }}</a>
+  </div>
+</section>
+{% endblock %}

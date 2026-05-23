@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <a href="{{ url_for('brand_campaign_detail', cid=c.id) }}" class="muted">← {{ c.title }}</a>
+      <h1 style="font-family: var(--font-display); margin: 8px 0 24px;">🤖 {{ t('ai_analyze') }}</h1>
+
+      <div class="insight-score-card">
+        <div class="insight-score-label">{{ t('ai_health') }}</div>
+        <div class="insight-score">{{ analysis.score }}<small style="font-size:24px; color:var(--text-muted)">/100</small></div>
+        <div class="chip {{ 'approved' if analysis.band == 'great' else ('pending' if analysis.band == 'ok' else 'rejected') }}">{{ analysis.band|upper }}</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">{{ 'تقديمات' if lang=='ar' else 'Submissions' }}</div><div class="value">{{ analysis.stats.submissions }}</div></div>
+        <div class="kpi"><div class="label">{{ 'موافقة%' if lang=='ar' else 'Approval %' }}</div><div class="value">{{ analysis.stats.approval_rate }}%</div></div>
+        <div class="kpi"><div class="label">{{ 'مشاهدات' if lang=='ar' else 'Views' }}</div><div class="value">{{ fmt_num(analysis.stats.total_views) }}</div></div>
+        <div class="kpi"><div class="label">CPM</div><div class="value">${{ analysis.stats.cpm }}</div></div>
+      </div>
+
+      <div class="insight-grid">
+        <div class="insight-panel good">
+          <h3>{{ t('ai_strengths') }}</h3>
+          {% if analysis.strengths %}
+          <ul>{% for k in analysis.strengths %}<li>{{ insight_t(k) }}</li>{% endfor %}</ul>
+          {% else %}<p class="muted">—</p>{% endif %}
+        </div>
+        <div class="insight-panel weak">
+          <h3>{{ t('ai_weaknesses') }}</h3>
+          {% if analysis.weaknesses %}
+          <ul>{% for k in analysis.weaknesses %}<li>{{ insight_t(k) }}</li>{% endfor %}</ul>
+          {% else %}<p class="muted">—</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="insight-panel mt-3">
+        <h3>💡 {{ t('ai_recommendations') }}</h3>
+        {% if analysis.recommendations %}
+        <ul>{% for k in analysis.recommendations %}<li>{{ insight_t(k) }}</li>{% endfor %}</ul>
+        {% else %}<p class="muted">{{ 'الحملة تعمل بشكل ممتاز.' if lang=='ar' else 'The campaign is performing well.' }}</p>{% endif %}
+      </div>
+
+      <h2 style="font-family: var(--font-display); margin: 32px 0 16px;">{{ t('ai_suggested') }}</h2>
+      {% for m in matches %}
+        <div class="match-card">
+          <div class="match-avatar">{{ m.creator.name[0]|upper }}</div>
+          <div class="match-info">
+            <div class="nm">{{ m.creator.name }} {% if m.creator.country %}<span class="muted">· {{ m.creator.country }}</span>{% endif %}</div>
+            <div class="rs">{{ m.reasons | join(' · ') }}</div>
+          </div>
+          <div class="match-score">{{ m.match }}%</div>
+        </div>
+      {% else %}
+        <p class="muted">{{ 'لم نجد مبدعين متطابقين بعد.' if lang=='ar' else 'No creator matches yet.' }}</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

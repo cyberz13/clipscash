@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <div class="flex flex-between">
+        <h1 style="font-family: var(--font-display); margin:0;">{{ 'لوحة البراند' if lang=='ar' else 'Brand dashboard' }}</h1>
+        <a class="btn btn-primary" href="{{ url_for('camp_wiz_start') }}">+ {{ t('cta_launch_campaign') }}</a>
+      </div>
+
+      <div class="kpi-grid mt-3">
+        <div class="kpi accent">
+          <div class="label">{{ t('wallet_balance') }}</div>
+          <div class="value">{{ fmt_money(current_user.balance_cents) }}</div>
+          <a href="{{ url_for('brand_wallet') }}" class="muted" style="font-size:12px;">{{ t('wallet_topup') }} →</a>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('active') }}</div>
+          <div class="value">{{ counts.active }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ t('draft') }}</div>
+          <div class="value">{{ counts.draft }}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">{{ 'تقديمات معلّقة' if lang=='ar' else 'Pending review' }}</div>
+          <div class="value">{{ pending_subs }}</div>
+          <a href="{{ url_for('brand_team') }}" class="muted" style="font-size:12px;">{{ 'إدارة الفريق' if lang=='ar' else 'Manage team' }} →</a>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-head">
+          <h3>{{ t('dash_campaigns') }}</h3>
+          <a href="{{ url_for('brand_campaigns') }}" class="muted">{{ t('cta_view_all') }}</a>
+        </div>
+        {% if campaigns %}
+        <table class="data">
+          <thead>
+            <tr><th>{{ 'الحملة' if lang=='ar' else 'Campaign' }}</th><th>{{ t('category') }}</th><th>{{ t('status') }}</th><th>{{ t('spent') }}</th><th>{{ t('budget') }}</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for c in campaigns[:10] %}
+            <tr>
+              <td><a href="{{ url_for('brand_campaign_detail', cid=c.id) }}">{{ c.title }}</a></td>
+              <td class="muted">{{ cat_label(c.category) }}</td>
+              <td><span class="chip {{ c.status }}">{{ t(c.status) }}</span></td>
+              <td>{{ fmt_money(c.spent_cents) }}</td>
+              <td>{{ fmt_money(c.budget_cents) }}</td>
+              <td><a href="{{ url_for('brand_insights', cid=c.id) }}" class="text-accent" title="AI">{{ t('ai_analyze') }}</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <h3>{{ 'لا حملات بعد' if lang=='ar' else 'No campaigns yet' }}</h3>
+          <a class="btn btn-primary mt-2" href="{{ url_for('camp_wiz_start') }}">{{ t('cta_launch_campaign') }}</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

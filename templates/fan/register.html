@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container-sm" style="max-width: 480px;">
+    <div class="form-card">
+      <h1>{{ 'انضم لشبكة المعجبين' if lang=='ar' else 'Join the fan network' }}</h1>
+      <p class="sub">{{ 'سجّل لتظهر على لوحات الصدارة وتدعم مبدعيك المفضلين.' if lang=='ar' else 'Sign up to appear on leaderboards and support your favorite creators.' }}</p>
+      <form method="post">
+        <div class="field">
+          <label>{{ 'الاسم (سيظهر على الـleaderboard)' if lang=='ar' else 'Display name' }}</label>
+          <input type="text" name="name" value="{{ name or '' }}" required autofocus>
+        </div>
+        <div class="field">
+          <label>{{ t('auth_email') }}</label>
+          <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label>{{ t('auth_password') }}</label>
+          <input type="password" name="password" minlength="6" required autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary btn-block">{{ 'إنشاء حساب معجب' if lang=='ar' else 'Create fan account' }}</button>
+      </form>
+      <p class="muted text-center mt-3">
+        <a href="{{ url_for('fan_login') }}">{{ 'لديك حساب؟ سجّل دخولك' if lang=='ar' else 'Already have an account? Sign in' }}</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
