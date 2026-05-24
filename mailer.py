@@ -35,10 +35,11 @@ def send_email(to: str, subject: str, html: str, text: str | None = None) -> boo
     port = int(os.environ.get("SMTP_PORT", "465"))
     user = os.environ["SMTP_USER"]
     pwd = os.environ.get("SMTP_PASS", "")
+    from_email = os.environ.get("SMTP_FROM", user)
     from_name = os.environ.get("SMTP_FROM_NAME", "Clipscash")
 
     msg = EmailMessage()
-    msg["From"] = f"{from_name} <{user}>"
+    msg["From"] = f"{from_name} <{from_email}>"
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(text or _html_to_text(html))
