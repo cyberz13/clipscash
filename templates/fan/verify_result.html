@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container-sm" style="max-width: 480px;">
+    <div class="form-card text-center">
+      {% if success %}
+        <div style="font-size: 64px; margin-bottom: 12px;">✅</div>
+        <h1>{{ 'تم التفعيل!' if lang=='ar' else 'Verified!' }}</h1>
+        <p class="sub">
+          {{ 'مرحباً' if lang=='ar' else 'Welcome' }} {{ name }} — {{ 'بريدك مُفعّل ودخلت تلقائياً.' if lang=='ar' else 'your email is verified and you are signed in.' }}
+        </p>
+        <a href="{{ url_for('fan_dashboard') }}" class="btn btn-primary btn-block mt-3">
+          {{ 'لوحتي' if lang=='ar' else 'My dashboard' }} →
+        </a>
+      {% else %}
+        <div style="font-size: 64px; margin-bottom: 12px;">❌</div>
+        <h1>{{ 'رابط غير صالح أو منتهي' if lang=='ar' else 'Invalid or expired link' }}</h1>
+        <p class="sub">
+          {{ 'الرابط استُخدم سابقاً أو انتهت صلاحيته. سجّل دخول واطلب إعادة الإرسال.' if lang=='ar' else 'The link was already used or has expired. Sign in and request a new one.' }}
+        </p>
+        <a href="{{ url_for('fan_login') }}" class="btn btn-primary btn-block mt-3">
+          {{ 'تسجيل دخول' if lang=='ar' else 'Sign in' }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

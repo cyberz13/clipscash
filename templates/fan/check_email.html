@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section">
+  <div class="container-sm" style="max-width: 520px;">
+    <div class="form-card text-center">
+      <div style="font-size: 56px; margin-bottom: 12px;">📧</div>
+      <h1>{{ 'افحص بريدك الإلكتروني' if lang=='ar' else 'Check your email' }}</h1>
+      <p class="sub">
+        {% if need_verify %}
+          {{ 'لازم تؤكّد بريدك قبل تسجيل الدخول. أرسلنا رابطاً إلى:' if lang=='ar' else 'You need to verify your email before signing in. We sent a link to:' }}
+        {% else %}
+          {{ 'تم إنشاء حسابك! أرسلنا رابط تأكيد إلى:' if lang=='ar' else 'Your account is created! We sent a verification link to:' }}
+        {% endif %}
+      </p>
+      <p style="background: var(--bg); padding: 14px; border-radius: 10px; font-family: ui-monospace, monospace; color: var(--accent); word-break: break-all;">
+        {{ email }}
+      </p>
+      <p class="muted" style="font-size: 13px;">
+        {{ 'افتح الرابط لتفعيل حسابك. ينتهي خلال ٢٤ ساعة.' if lang=='ar' else 'Open the link to activate your account. Expires in 24 hours.' }}
+      </p>
+
+      {% if not smtp_ok %}
+      <div style="background: rgba(255,183,60,.08); border: 1px solid var(--warn); border-radius: 10px; padding: 14px; margin-top: 20px; text-align: start;">
+        <strong style="color: var(--warn);">⚠ {{ 'الإيميل لم يُرسل (مزود البريد غير مُعدّ بعد)' if lang=='ar' else 'Email not sent (mail provider not configured yet)' }}</strong>
+        {% if verify_url %}
+          <p style="font-size: 12px; color: var(--text-muted); margin: 8px 0 4px;">
+            {{ 'استخدم هذا الرابط مؤقتاً:' if lang=='ar' else 'Use this link as a temporary workaround:' }}
+          </p>
+          <a href="{{ verify_url }}" style="font-family: ui-monospace,monospace; font-size: 11px; color: var(--accent); word-break: break-all;">{{ verify_url }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('fan_resend_verification') }}" style="margin-top: 20px;">
+        <input type="hidden" name="email" value="{{ email }}">
+        <button class="btn btn-ghost btn-sm" type="submit">
+          ↻ {{ 'إعادة إرسال الرابط' if lang=='ar' else 'Resend verification link' }}
+        </button>
+      </form>
+
+      <p class="muted text-center mt-3" style="font-size: 13px;">
+        <a href="{{ url_for('fan_login') }}">{{ 'تم تأكيدي — تسجيل دخول' if lang=='ar' else "I'm verified — sign in" }}</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

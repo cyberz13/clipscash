@@ -27,6 +27,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import db
 import ai_insights
 import fraud as fraud_mod
+import mailer
 from i18n import t, cat_label, CATEGORIES, PLATFORMS, PAYOUT_TYPES
 
 try:
@@ -1643,9 +1644,12 @@ def fan_register():
         if db.query_one("SELECT 1 FROM users WHERE email=?", (email,)):
             flash(t("auth_email_taken", lang()), "error")
             return render_template("fan/register.html", name=name, email=email)
+        verify_token = secrets.token_urlsafe(24)
         uid = db.execute(
-            "INSERT INTO users (email,password_hash,name,role,lang) VALUES (?,?,?,?,?)",
-            (email, generate_password_hash(password), name, "fan", lang()),
+            """INSERT INTO users
+               (email,password_hash,name,role,lang,email_verified,email_verification_token)
+               VALUES (?,?,?,?,?,0,?)""",
+            (email, generate_password_hash(password), name, "fan", lang(), verify_token),
         )
         # Link previous anonymous clicks (same vtok) to this new fan account
         vtok = request.cookies.get("vtok")
@@ -1654,10 +1658,57 @@ def fan_register():
                 "UPDATE view_clicks SET fan_id=? WHERE fan_id IS NULL AND visitor_token=?",
                 (uid, vtok),
             )
-        session.clear()
-        session["user_id"] = uid
-        return redirect(url_for("fan_dashboard"))
+        # Send verification email (no-op if SMTP unconfigured — see mailer.py)
+        verify_url = url_for("fan_verify", token=verify_token, _external=True)
+        subject, html = mailer.render_verification_email(name, verify_url, lang())
+        sent = mailer.send_email(email, subject, html)
+        # Do NOT auto-login — user must verify first
+        return render_template("fan/check_email.html",
+                               email=email, smtp_ok=sent, verify_url=verify_url)
     return render_template("fan/register.html")
+
+
+@app.route("/fan/verify/<token>")
+def fan_verify(token):
+    row = db.query_one(
+        "SELECT id, name, email_verified FROM users WHERE email_verification_token=? AND role='fan'",
+        (token,),
+    )
+    if not row:
+        return render_template("fan/verify_result.html", success=False), 404
+    if not row["email_verified"]:
+        db.execute(
+            "UPDATE users SET email_verified=1, email_verification_token=NULL WHERE id=?",
+            (row["id"],),
+        )
+    # Auto-login the fan now that email is verified
+    session.clear()
+    session["user_id"] = row["id"]
+    return render_template("fan/verify_result.html", success=True, name=row["name"])
+
+
+@app.route("/fan/resend-verification", methods=["POST"])
+def fan_resend_verification():
+    email = (request.form.get("email") or "").strip().lower()
+    if not email:
+        return redirect(url_for("fan_register"))
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "?").split(",")[0].strip()
+    if rate_limited(f"resend:ip:{ip}", max_calls=5, window_seconds=3600) or \
+       rate_limited(f"resend:email:{email}", max_calls=3, window_seconds=3600):
+        flash("Too many resend requests.", "error")
+        return redirect(url_for("fan_login"))
+    row = db.query_one(
+        "SELECT id, name, lang, email_verified FROM users WHERE email=? AND role='fan'",
+        (email,),
+    )
+    if row and not row["email_verified"]:
+        new_token = secrets.token_urlsafe(24)
+        db.execute("UPDATE users SET email_verification_token=? WHERE id=?", (new_token, row["id"]))
+        verify_url = url_for("fan_verify", token=new_token, _external=True)
+        subject, html = mailer.render_verification_email(row["name"], verify_url, row["lang"] or lang())
+        mailer.send_email(email, subject, html)
+    flash("If the email exists and is unverified, a new link was sent.", "success")
+    return redirect(url_for("fan_login"))
 
 
 @app.route("/fan/login", methods=["GET", "POST"])
@@ -1677,6 +1728,8 @@ def fan_login():
         if row["banned"]:
             flash("Account suspended.", "error")
             return render_template("fan/login.html", email=email)
+        if not row["email_verified"]:
+            return render_template("fan/check_email.html", email=email, smtp_ok=True, need_verify=True)
         session.clear()
         session["user_id"] = row["id"]
         return redirect(safe_next(request.args.get("next")) or url_for("fan_dashboard"))

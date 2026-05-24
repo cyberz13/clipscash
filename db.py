@@ -114,6 +114,22 @@ def migrate() -> None:
         finally:
             conn.execute("PRAGMA foreign_keys=ON")
 
+    # Fan email verification
+    if "email_verified" not in cols:
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+    cols = {r[1] for r in cur.execute("PRAGMA table_info(users)").fetchall()}
+    if "email_verification_token" not in cols:
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN email_verification_token TEXT")
+        except sqlite3.OperationalError:
+            pass
+    # Auto-verify existing brand/creator/admin (they were created by trusted parties)
+    cur.execute("UPDATE users SET email_verified=1 WHERE role IN ('admin','brand','creator')")
+    conn.commit()
+
     # view_clicks table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS view_clicks (
