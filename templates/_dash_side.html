@@ -21,6 +21,7 @@
     <a href="{{ url_for('admin_index') }}" class="{% if request.endpoint=='admin_index' %}active{% endif %}">{{ t('dash_overview') }}</a>
     <a href="{{ url_for('admin_users') }}" class="{% if request.endpoint in ['admin_users','admin_user_detail'] %}active{% endif %}">{{ 'المستخدمون' if lang=='ar' else 'Users' }}</a>
     <a href="{{ url_for('admin_brand_new') }}" class="{% if request.endpoint=='admin_brand_new' %}active{% endif %}">+ {{ 'إضافة براند' if lang=='ar' else 'Add brand' }}</a>
+    <a href="{{ url_for('admin_creator_new') }}" class="{% if request.endpoint=='admin_creator_new' %}active{% endif %}">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add creator' }}</a>
     <a href="{{ url_for('admin_campaigns') }}" class="{% if request.endpoint=='admin_campaigns' %}active{% endif %}">{{ t('dash_campaigns') }}</a>
     <a href="{{ url_for('admin_submissions') }}" class="{% if request.endpoint=='admin_submissions' %}active{% endif %}">{{ t('dash_submissions') }}</a>
     <a href="{{ url_for('admin_payouts') }}" class="{% if request.endpoint=='admin_payouts' %}active{% endif %}">{{ 'السحوبات' if lang=='ar' else 'Payouts' }}</a>

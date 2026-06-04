@@ -1196,30 +1196,14 @@ def brand_team():
     return render_template("brand/team.html", creators=creators)
 
 
-@app.route("/brand/team/new", methods=["GET", "POST"])
+@app.route("/brand/team/new")
 @login_required("brand")
 def brand_team_new():
-    u = current_user()
-    if request.method == "POST":
-        name = (request.form.get("name") or "").strip()
-        email = (request.form.get("email") or "").strip().lower()
-        password = (request.form.get("password") or "").strip()
-        country = (request.form.get("country") or "").strip()
-        if not name or not email or len(password) < 6:
-            flash("Name, email, and 6+ char password required.", "error")
-            return render_template("brand/team_new.html", name=name, email=email, country=country)
-        if db.query_one("SELECT 1 FROM users WHERE email=?", (email,)):
-            flash(t("auth_email_taken", lang()), "error")
-            return render_template("brand/team_new.html", name=name, email=email, country=country)
-        uid = db.execute(
-            "INSERT INTO users (email,password_hash,name,role,country,lang,brand_id) VALUES (?,?,?,?,?,?,?)",
-            (email, generate_password_hash(password), name, "creator", country, lang(), u["id"]),
-        )
-        notify(uid, "Welcome" if lang() == "en" else "أهلاً بك",
-               f"Account created by {u['name']}", url_for("dashboard"), "sparkles")
-        flash(f"Creator '{name}' added. Login: {email} / {password}", "success")
-        return redirect(url_for("brand_team_detail", uid=uid))
-    return render_template("brand/team_new.html")
+    """Brands no longer create creators directly — the platform admin does.
+    This route now redirects to the team list with an explainer."""
+    flash("إضافة المبدعين تتم من قبل إدارة المنصة. اطلب من الأدمن إنشاء حساب المبدع وربطه ببراندك." if lang() == "ar"
+          else "Creators are added by the platform admin. Contact the admin to add a creator to your brand.", "info")
+    return redirect(url_for("brand_team"))
 
 
 @app.route("/brand/team/<int:uid>")
@@ -1289,6 +1273,45 @@ def brand_team_reset_password(uid):
 
 
 # ===== Super-admin: USER management =====
+
+@app.route("/admin/creators/new", methods=["GET", "POST"])
+@login_required("admin")
+def admin_creator_new():
+    brands = db.query(
+        "SELECT id, name, email FROM users WHERE role='brand' AND banned=0 ORDER BY name"
+    )
+    if request.method == "POST":
+        try:
+            brand_id = int(request.form.get("brand_id") or 0)
+        except ValueError:
+            brand_id = 0
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
+        password = (request.form.get("password") or "").strip()
+        country = (request.form.get("country") or "").strip()
+        if not brand_id or not db.query_one("SELECT 1 FROM users WHERE id=? AND role='brand'", (brand_id,)):
+            flash("Select a valid brand.", "error")
+            return render_template("admin/creator_new.html", brands=brands, name=name, email=email, country=country, brand_id=brand_id)
+        if not name or not email or len(password) < 6:
+            flash("Name, email, and 6+ char password required.", "error")
+            return render_template("admin/creator_new.html", brands=brands, name=name, email=email, country=country, brand_id=brand_id)
+        if db.query_one("SELECT 1 FROM users WHERE email=?", (email,)):
+            flash(t("auth_email_taken", lang()), "error")
+            return render_template("admin/creator_new.html", brands=brands, name=name, email=email, country=country, brand_id=brand_id)
+        uid = db.execute(
+            """INSERT INTO users
+               (email,password_hash,name,role,country,lang,brand_id,email_verified)
+               VALUES (?,?,?,?,?,?,?,1)""",
+            (email, generate_password_hash(password), name, "creator", country, lang(), brand_id),
+        )
+        brand = db.query_one("SELECT name FROM users WHERE id=?", (brand_id,))
+        notify(uid, "Welcome" if lang() == "en" else "أهلاً بك",
+               f"Account created. Your brand: {brand['name']}",
+               url_for("dashboard"), "sparkles")
+        flash(f"Creator '{name}' added to {brand['name']}. Login: {email} / {password}", "success")
+        return redirect(url_for("admin_user_detail", uid=uid))
+    return render_template("admin/creator_new.html", brands=brands)
+
 
 @app.route("/admin/brands/new", methods=["GET", "POST"])
 @login_required("admin")

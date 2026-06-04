@@ -4,11 +4,11 @@
   <div class="dash-grid">
     {% include "_dash_side.html" %}
     <div>
-      <div class="flex flex-between">
-        <h1 style="font-family: var(--font-display); margin:0;">{{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</h1>
-        <a class="btn btn-primary" href="{{ url_for('brand_team_new') }}">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add creator' }}</a>
-      </div>
-      <p class="muted mt-1">{{ creators|length }} {{ 'مبدع في فريقك' if lang=='ar' else 'creators in your team' }}</p>
+      <h1 style="font-family: var(--font-display); margin:0;">{{ 'فريق المبدعين' if lang=='ar' else 'Creator team' }}</h1>
+      <p class="muted mt-1">
+        {{ creators|length }} {{ 'مبدع في فريقك' if lang=='ar' else 'creators in your team' }} ·
+        <em>{{ 'إضافة مبدعين تتم من قبل إدارة المنصة.' if lang=='ar' else 'Creators are added by the platform admin.' }}</em>
+      </p>
 
       <div class="table-card mt-3">
         {% if creators %}
@@ -41,8 +41,7 @@
         {% else %}
         <div class="empty">
           <h3>{{ 'لا مبدعين بعد' if lang=='ar' else 'No creators yet' }}</h3>
-          <p>{{ 'أضِف أول مبدع لفريقك.' if lang=='ar' else 'Add your first creator.' }}</p>
-          <a class="btn btn-primary mt-2" href="{{ url_for('brand_team_new') }}">+ {{ 'إضافة مبدع' if lang=='ar' else 'Add creator' }}</a>
+          <p>{{ 'تواصل مع إدارة المنصة لإضافة مبدعين لبراندك.' if lang=='ar' else 'Contact platform admin to add creators to your brand.' }}</p>
         </div>
         {% endif %}
       </div>
