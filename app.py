@@ -156,13 +156,17 @@ def login_required(role: str | None = None):
 
 
 def fmt_money(cents: int, lang_: str = None) -> str:
+    """Format integer halalas as SAR. Symbol: ر.س (Arabic) / SAR (English)."""
     lang_ = lang_ or lang()
     if cents is None:
         cents = 0
-    dollars = cents / 100
-    if dollars >= 1000:
-        return f"${dollars:,.0f}"
-    return f"${dollars:,.2f}"
+    val = cents / 100
+    label = "ر.س" if lang_ == "ar" else "SAR"
+    if abs(val) >= 1000:
+        amount = f"{val:,.0f}"
+    else:
+        amount = f"{val:,.2f}"
+    return f"{amount} {label}"
 
 
 def fmt_num(n: int) -> str:

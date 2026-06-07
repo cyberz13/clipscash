@@ -28,7 +28,7 @@
               <td>
                 {% if r.status == 'pending' %}
                   <form method="post" action="{{ url_for('admin_force_approve', sid=r.id) }}" class="flex" style="gap:4px;">
-                    <input type="number" name="payout" step="0.01" min="0" placeholder="$" style="width:70px;padding:4px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font-size:12px;">
+                    <input type="number" name="payout" step="0.01" min="0" placeholder="ر.س" style="width:80px;padding:4px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font-size:12px;">
                     <button class="btn btn-sm btn-primary">✓</button>
                   </form>
                   <form method="post" action="{{ url_for('admin_force_reject', sid=r.id) }}" class="mt-1">

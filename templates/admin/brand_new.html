@@ -31,7 +31,7 @@
               <button type="button" class="btn btn-sm mt-1" onclick="document.getElementById('pw').value = Math.random().toString(36).slice(2,10) + '!' + Math.floor(Math.random()*100)">{{ 'توليد عشوائي' if lang=='ar' else 'Generate' }}</button>
             </div>
             <div class="field">
-              <label>{{ 'رصيد ابتدائي (USD)' if lang=='ar' else 'Initial wallet balance (USD)' }}</label>
+              <label>{{ 'رصيد ابتدائي (ر.س)' if lang=='ar' else 'Initial wallet balance (SAR)' }}</label>
               <input type="number" name="initial_balance" step="0.01" min="0" value="0">
               <div class="hint">{{ 'لتمويل حملاتهم الأولى.' if lang=='ar' else 'For funding their first campaigns.' }}</div>
             </div>

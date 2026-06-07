@@ -8,7 +8,7 @@
     <form method="post" action="{{ url_for('camp_wiz_step', step=4) }}">
       <div class="field-row">
         <div class="field">
-          <label>{{ 'الميزانية الإجمالية (USD)' if lang=='ar' else 'Total budget (USD)' }}</label>
+          <label>{{ 'الميزانية الإجمالية (ر.س)' if lang=='ar' else 'Total budget (SAR)' }}</label>
           <input type="number" name="budget" step="0.01" min="10" value="{{ (state.budget_cents/100) if state.budget_cents else '' }}" required>
           <div class="hint">{{ 'الرصيد الحالي:' if lang=='ar' else 'Wallet balance:' }} <strong>{{ fmt_money(current_user.balance_cents) }}</strong></div>
         </div>

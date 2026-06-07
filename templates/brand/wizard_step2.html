@@ -23,7 +23,7 @@
         </div>
       </div>
       <div class="field">
-        <label>{{ 'القيمة (USD)' if lang=='ar' else 'Rate (USD)' }}</label>
+        <label>{{ 'القيمة (ر.س)' if lang=='ar' else 'Rate (SAR)' }}</label>
         <input type="number" name="payout_rate" step="0.01" min="0.01" value="{{ (state.payout_rate_cents/100) if state.payout_rate_cents else '' }}" required>
         <div class="hint">{{ 'مثال: ٢.٥٠ لكل ١٠٠٠ مشاهدة' if lang=='ar' else 'e.g. 2.50 per 1K views, or 250 per post' }}</div>
       </div>

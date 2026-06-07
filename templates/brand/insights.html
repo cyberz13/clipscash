@@ -17,7 +17,7 @@
         <div class="kpi"><div class="label">{{ 'تقديمات' if lang=='ar' else 'Submissions' }}</div><div class="value">{{ analysis.stats.submissions }}</div></div>
         <div class="kpi"><div class="label">{{ 'موافقة%' if lang=='ar' else 'Approval %' }}</div><div class="value">{{ analysis.stats.approval_rate }}%</div></div>
         <div class="kpi"><div class="label">{{ 'مشاهدات' if lang=='ar' else 'Views' }}</div><div class="value">{{ fmt_num(analysis.stats.total_views) }}</div></div>
-        <div class="kpi"><div class="label">CPM</div><div class="value">${{ analysis.stats.cpm }}</div></div>
+        <div class="kpi"><div class="label">CPM</div><div class="value">{{ analysis.stats.cpm }} {{ 'ر.س' if lang=='ar' else 'SAR' }}</div></div>
       </div>
 
       <div class="insight-grid">
