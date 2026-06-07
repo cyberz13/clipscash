@@ -27,14 +27,19 @@
                 <span class="muted" style="font-size:12px;">{{ p.user_email }}</span>
               </td>
               <td>
-                <strong>{{ p.method }}</strong>
-                {% if p.method == 'bank' and p.details and p.details.startswith('{') %}
+                <strong>{% if p.method == 'apple_pay' %}🍎 Apple Pay{% else %}{{ p.method }}{% endif %}</strong>
+                {% if p.method == 'apple_pay' and p.details and p.details.startswith('{') %}
+                  {% set d = p.details|from_json %}
+                  <div style="font-size:13px; margin-top:4px;">
+                    <span class="muted">Phone:</span> <code style="font-family:ui-monospace,monospace; user-select:all;">{{ d.phone }}</code>
+                  </div>
+                {% elif p.method == 'bank' and p.details and p.details.startswith('{') %}
+                  {# legacy bank records (kept for historical payouts) #}
                   {% set d = p.details|from_json %}
                   <div style="font-size:11px; margin-top:4px;">
-                    <div><span class="muted">IBAN:</span> <code style="font-family:ui-monospace,monospace;">{{ d.iban }}</code></div>
+                    <div><span class="muted">IBAN:</span> <code>{{ d.iban }}</code></div>
                     <div><span class="muted">Bank:</span> {{ d.bank_name }}</div>
                     <div><span class="muted">Name:</span> {{ d.beneficiary }}</div>
-                    {% if d.swift %}<div><span class="muted">SWIFT:</span> {{ d.swift }}</div>{% endif %}
                   </div>
                 {% else %}
                   <br><span class="muted" style="font-size:11px;">{{ p.details or '' }}</span>

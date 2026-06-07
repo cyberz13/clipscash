@@ -23,7 +23,7 @@
 
       <div class="form-card mt-3">
         <h2>{{ t('wallet_withdraw') }}</h2>
-        <p class="sub">{{ 'الحد الأدنى ١٠$' if lang=='ar' else 'Minimum $10 withdrawal' }}</p>
+        <p class="sub">{{ 'الحد الأدنى ١٠$. لا نطلب أي بيانات بنكية.' if lang=='ar' else 'Minimum $10. No bank details required.' }}</p>
         <form method="post" action="{{ url_for('creator_withdraw') }}" id="withdrawForm">
           <div class="field-row">
             <div class="field">
@@ -33,11 +33,20 @@
             <div class="field">
               <label>{{ 'طريقة السحب' if lang=='ar' else 'Method' }}</label>
               <select name="method" id="payoutMethod">
-                <option value="bank">{{ 'تحويل بنكي (IBAN)' if lang=='ar' else 'Bank transfer (IBAN)' }}</option>
+                <option value="apple_pay">{{ '🍎 Apple Pay (رقم جوال)' if lang=='ar' else '🍎 Apple Pay (phone number)' }}</option>
                 <option value="paypal">PayPal</option>
                 <option value="wise">Wise</option>
                 <option value="usdt">USDT (TRC20/ERC20)</option>
               </select>
+            </div>
+          </div>
+
+          <!-- Apple Pay (phone) -->
+          <div data-method-group="apple_pay">
+            <div class="field">
+              <label>{{ 'رقم جوال Apple Pay' if lang=='ar' else 'Apple Pay phone number' }}</label>
+              <input type="tel" name="phone" placeholder="05X XXX XXXX" style="font-family: ui-monospace, monospace; letter-spacing: 1px;" dir="ltr">
+              <div class="hint">{{ 'رقم الجوال المرتبط بـApple Pay عندك. السعودية: ٠٥X XXX XXXX' if lang=='ar' else 'Phone linked to your Apple Pay. KSA format: 05X XXX XXXX' }}</div>
             </div>
           </div>
 
@@ -48,31 +57,6 @@
             <div class="hint" data-method-hint></div>
           </div>
 
-          <!-- Bank fields -->
-          <div data-method-group="bank">
-            <div class="field-row">
-              <div class="field">
-                <label>{{ 'رقم الآيبان (IBAN)' if lang=='ar' else 'IBAN' }}</label>
-                <input type="text" name="iban" placeholder="SA0380000000608010167519" style="font-family: ui-monospace, monospace; letter-spacing: 1px;">
-                <div class="hint">{{ 'بدون مسافات. سيتحقق من صحته تلقائياً.' if lang=='ar' else 'No spaces. Validated automatically.' }}</div>
-              </div>
-              <div class="field">
-                <label>{{ 'اسم البنك' if lang=='ar' else 'Bank name' }}</label>
-                <input type="text" name="bank_name" placeholder="{{ 'الراجحي / الأهلي / الرياض ...' if lang=='ar' else 'Al Rajhi / SNB / Riyad Bank ...' }}">
-              </div>
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label>{{ 'اسم المستفيد (مطابق للبنك)' if lang=='ar' else 'Beneficiary name (matches bank)' }}</label>
-                <input type="text" name="beneficiary">
-              </div>
-              <div class="field">
-                <label>SWIFT / BIC <span class="muted">({{ 'اختياري للسعودية' if lang=='ar' else 'optional for KSA' }})</span></label>
-                <input type="text" name="swift" placeholder="RJHISARI" style="font-family: ui-monospace, monospace;">
-              </div>
-            </div>
-          </div>
-
           <button class="btn btn-primary">{{ t('wallet_withdraw') }}</button>
         </form>
       </div>
@@ -81,7 +65,7 @@
       (function(){
         const sel = document.getElementById('payoutMethod');
         const groupGen = document.querySelector('[data-method-group="generic"]');
-        const groupBank = document.querySelector('[data-method-group="bank"]');
+        const groupApple = document.querySelector('[data-method-group="apple_pay"]');
         const lbl = document.querySelector('[data-method-label]');
         const inp = document.querySelector('[name="details"]');
         const hint = document.querySelector('[data-method-hint]');
@@ -93,20 +77,20 @@
         };
         function refresh(){
           const m = sel.value;
-          if (m === 'bank') {
+          if (m === 'apple_pay') {
             groupGen.style.display = 'none';
-            groupBank.style.display = '';
-            groupGen.querySelectorAll('input').forEach(el => el.required = false);
-            groupBank.querySelectorAll('input[name=iban],input[name=bank_name],input[name=beneficiary]').forEach(el => el.required = true);
+            groupApple.style.display = '';
+            groupGen.querySelector('input').required = false;
+            groupApple.querySelector('input').required = true;
           } else {
-            groupBank.style.display = 'none';
+            groupApple.style.display = 'none';
             groupGen.style.display = '';
             const cfg = labels[m] || labels.paypal;
             lbl.textContent = cfg.lab;
             inp.placeholder = cfg.ph;
             inp.required = true;
             hint.textContent = cfg.hint;
-            groupBank.querySelectorAll('input').forEach(el => el.required = false);
+            groupApple.querySelector('input').required = false;
           }
         }
         sel.addEventListener('change', refresh);

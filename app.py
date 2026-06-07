@@ -467,20 +467,29 @@ def creator_wallet():
     return render_template("creator/wallet.html", tx=tx, payouts=payouts)
 
 
-IBAN_RE = re.compile(r"^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$")
+_PHONE_RE = re.compile(r"^\+?\d[\d\s\-]{6,18}$")
 
 
-def _iban_valid(iban: str) -> bool:
-    """Validate IBAN via mod-97 check (works for any country)."""
-    iban = iban.replace(" ", "").upper()
-    if not IBAN_RE.match(iban):
-        return False
-    rearranged = iban[4:] + iban[:4]
-    converted = "".join(str(ord(c) - 55) if c.isalpha() else c for c in rearranged)
-    try:
-        return int(converted) % 97 == 1
-    except ValueError:
-        return False
+def _normalize_ksa_phone(raw: str) -> str | None:
+    """Accept 0512345678, 512345678, +966512345678, 966512345678 →
+    return canonical +9665XXXXXXXX, or None if invalid."""
+    s = re.sub(r"[^\d+]", "", raw or "")
+    if not s:
+        return None
+    if s.startswith("+966"):
+        digits = s[4:]
+    elif s.startswith("966"):
+        digits = s[3:]
+    elif s.startswith("0"):
+        digits = s[1:]
+    else:
+        digits = s
+    if len(digits) == 9 and digits.startswith("5"):
+        return "+966" + digits
+    # Non-KSA: accept as-is if it looks like an international number
+    if _PHONE_RE.match(raw or ""):
+        return raw.strip()
+    return None
 
 
 @app.route("/creator/wallet/withdraw", methods=["POST"])
@@ -488,32 +497,22 @@ def _iban_valid(iban: str) -> bool:
 def creator_withdraw():
     u = current_user()
     amount = parse_money_input(request.form.get("amount", ""))
-    method = request.form.get("method", "paypal")
-    if method not in ("paypal", "wise", "usdt", "bank"):
+    method = request.form.get("method", "apple_pay")
+    if method not in ("apple_pay", "paypal", "wise", "usdt"):
         flash("Invalid payout method.", "error")
         return redirect(url_for("creator_wallet"))
     if amount < 1000:
         flash("Minimum withdrawal is $10.", "error")
         return redirect(url_for("creator_wallet"))
-    if method == "bank":
-        iban = (request.form.get("iban") or "").replace(" ", "").upper()
-        bank_name = (request.form.get("bank_name") or "").strip()
-        beneficiary = (request.form.get("beneficiary") or "").strip()
-        swift = (request.form.get("swift") or "").strip().upper()
-        if not iban or not bank_name or not beneficiary:
-            flash("IBAN, bank name, and beneficiary name are required.", "error")
+    if method == "apple_pay":
+        phone_raw = (request.form.get("phone") or "").strip()
+        phone = _normalize_ksa_phone(phone_raw)
+        if not phone:
+            flash("Enter a valid phone number (KSA: 05X XXX XXXX)." if lang() == "en"
+                  else "أدخل رقم جوال صحيح (السعودية: ٠٥X XXX XXXX).", "error")
             return redirect(url_for("creator_wallet"))
-        if not _iban_valid(iban):
-            flash("Invalid IBAN — check the country code and digits.", "error")
-            return redirect(url_for("creator_wallet"))
-        details = json.dumps({
-            "type": "bank",
-            "iban": iban,
-            "bank_name": bank_name,
-            "beneficiary": beneficiary,
-            "swift": swift,
-        }, ensure_ascii=False)
-        human_summary = f"{bank_name} · {iban}"
+        details = json.dumps({"type": "apple_pay", "phone": phone}, ensure_ascii=False)
+        human_summary = f"Apple Pay · {phone}"
     else:
         details_raw = (request.form.get("details") or "").strip()
         if not details_raw:
