@@ -5,9 +5,7 @@
     {% include "_dash_side.html" %}
     <div>
       <h1 style="font-family: var(--font-display); margin: 0 0 6px;">{{ 'مرحباً' if lang=='ar' else 'Welcome' }}, {{ current_user.name }}</h1>
-      {% if brand %}
-        <div class="muted mb-3">{{ 'تنتمي إلى' if lang=='ar' else 'You belong to' }} <strong>{{ brand.name }}</strong></div>
-      {% endif %}
+      <div class="muted mb-3">{{ 'تصفّح الحملات المتاحة وقدّم على ما يناسبك.' if lang=='ar' else 'Browse all active campaigns and submit to what fits you.' }}</div>
 
       <div class="kpi-grid">
         <div class="kpi accent">

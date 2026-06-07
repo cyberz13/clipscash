@@ -286,16 +286,17 @@ def index():
 @app.route("/campaigns/<int:cid>")
 @login_required()
 def campaign_detail(cid):
-    """Campaign details — login-required and scoped to the user's brand."""
+    """Campaign details — login-required. Creators can view ANY active campaign
+    (marketplace model). Brands only see their own; admin sees all."""
     u = current_user()
     c = db.query_one("SELECT * FROM campaigns WHERE id=?", (cid,))
     if not c:
         abort(404)
-    # Brand can see own; creator can see only their brand's; admin sees all.
     if u["role"] == "brand" and c["brand_id"] != u["id"]:
         abort(403)
-    if u["role"] == "creator" and c["brand_id"] != u["brand_id"]:
-        abort(403)
+    if u["role"] == "creator" and c["status"] != "active":
+        # Creators can only see active campaigns (no drafts/ended from other brands)
+        abort(404)
     brand = db.query_one("SELECT id,name,avatar_url FROM users WHERE id=?", (c["brand_id"],))
     stats = db.query_one(
         "SELECT COUNT(*) AS subs, COALESCE(SUM(verified_views),0) AS views FROM submissions WHERE campaign_id=? AND status IN ('approved','paid')",
@@ -388,7 +389,6 @@ def dashboard():
 @login_required("creator")
 def creator_dashboard():
     u = current_user()
-    brand = db.query_one("SELECT id,name,avatar_url FROM users WHERE id=?", (u["brand_id"],)) if u["brand_id"] else None
     subs = db.query(
         """SELECT s.*, c.title AS campaign_title, c.brand_name
            FROM submissions s JOIN campaigns c ON c.id=s.campaign_id
@@ -400,27 +400,45 @@ def creator_dashboard():
         "approved": db.query_one("SELECT COUNT(*) c FROM submissions WHERE creator_id=? AND status IN ('approved','paid')", (u["id"],))["c"],
         "rejected": db.query_one("SELECT COUNT(*) c FROM submissions WHERE creator_id=? AND status='rejected'", (u["id"],))["c"],
     }
+    # Marketplace: show all active campaigns from any brand
     open_campaigns = db.query(
-        "SELECT * FROM campaigns WHERE brand_id=? AND status='active' ORDER BY created_at DESC LIMIT 6",
-        (u["brand_id"],),
-    ) if u["brand_id"] else []
+        "SELECT * FROM campaigns WHERE status='active' ORDER BY featured DESC, created_at DESC LIMIT 6"
+    )
     return render_template("creator/dashboard.html", subs=subs, counts=counts,
-                           brand=brand, open_campaigns=open_campaigns)
+                           brand=None, open_campaigns=open_campaigns)
 
 
 @app.route("/creator/campaigns")
 @login_required("creator")
 def creator_campaigns():
-    """Creator's view of their brand's active campaigns."""
-    u = current_user()
-    if not u["brand_id"]:
-        abort(403)
-    campaigns = db.query(
-        "SELECT * FROM campaigns WHERE brand_id=? AND status='active' ORDER BY created_at DESC",
-        (u["brand_id"],),
-    )
-    brand = db.query_one("SELECT name FROM users WHERE id=?", (u["brand_id"],))
-    return render_template("creator/campaigns.html", campaigns=campaigns, brand=brand)
+    """Marketplace view: all active campaigns from all brands."""
+    cat = request.args.get("category", "")
+    plat = request.args.get("platform", "")
+    q = request.args.get("q", "").strip()
+    sort = request.args.get("sort", "newest")
+
+    sql = "SELECT * FROM campaigns WHERE status='active'"
+    params: list = []
+    if cat and cat in CATEGORIES:
+        sql += " AND category = ?"
+        params.append(cat)
+    if plat and plat in PLATFORMS:
+        sql += " AND platforms LIKE ?"
+        params.append(f"%{plat}%")
+    if q:
+        sql += " AND (title LIKE ? OR brand_name LIKE ? OR description LIKE ?)"
+        like = f"%{q}%"
+        params += [like, like, like]
+    if sort == "highest":
+        sql += " ORDER BY payout_rate_cents DESC"
+    elif sort == "budget":
+        sql += " ORDER BY budget_cents DESC"
+    else:
+        sql += " ORDER BY featured DESC, created_at DESC"
+    sql += " LIMIT 60"
+    campaigns = db.query(sql, tuple(params))
+    return render_template("creator/campaigns.html", campaigns=campaigns,
+                           selected_cat=cat, selected_plat=plat, q=q, sort=sort)
 
 
 @app.route("/creator/submissions")
@@ -536,9 +554,7 @@ WIZ_SESS_KEY = "sub_wiz"
 @app.route("/campaigns/<int:cid>/submit")
 @login_required("creator")
 def submit_step1(cid):
-    u = current_user()
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active' AND brand_id=?",
-                     (cid, u["brand_id"]))
+    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
     if not c:
         abort(404)
     session.pop(WIZ_SESS_KEY, None)
@@ -549,9 +565,7 @@ def submit_step1(cid):
 @login_required("creator")
 def submit_back(cid, step):
     """Render an earlier wizard step using preserved session state."""
-    u = current_user()
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active' AND brand_id=?",
-                     (cid, u["brand_id"]))
+    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
     if not c:
         abort(404)
     state = session.get(WIZ_SESS_KEY, {})
@@ -566,9 +580,7 @@ def submit_back(cid, step):
 @app.route("/campaigns/<int:cid>/submit/step/<int:step>", methods=["POST"])
 @login_required("creator")
 def submit_step(cid, step):
-    u = current_user()
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active' AND brand_id=?",
-                     (cid, u["brand_id"]))
+    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
     if not c:
         abort(404)
     state = session.get(WIZ_SESS_KEY, {})
@@ -1282,16 +1294,15 @@ def admin_creator_new():
     )
     if request.method == "POST":
         try:
-            brand_id = int(request.form.get("brand_id") or 0)
+            brand_id = int(request.form.get("brand_id") or 0) or None
         except ValueError:
-            brand_id = 0
+            brand_id = None
+        if brand_id and not db.query_one("SELECT 1 FROM users WHERE id=? AND role='brand'", (brand_id,)):
+            brand_id = None
         name = (request.form.get("name") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
         password = (request.form.get("password") or "").strip()
         country = (request.form.get("country") or "").strip()
-        if not brand_id or not db.query_one("SELECT 1 FROM users WHERE id=? AND role='brand'", (brand_id,)):
-            flash("Select a valid brand.", "error")
-            return render_template("admin/creator_new.html", brands=brands, name=name, email=email, country=country, brand_id=brand_id)
         if not name or not email or len(password) < 6:
             flash("Name, email, and 6+ char password required.", "error")
             return render_template("admin/creator_new.html", brands=brands, name=name, email=email, country=country, brand_id=brand_id)
@@ -1304,11 +1315,16 @@ def admin_creator_new():
                VALUES (?,?,?,?,?,?,?,1)""",
             (email, generate_password_hash(password), name, "creator", country, lang(), brand_id),
         )
-        brand = db.query_one("SELECT name FROM users WHERE id=?", (brand_id,))
-        notify(uid, "Welcome" if lang() == "en" else "أهلاً بك",
-               f"Account created. Your brand: {brand['name']}",
-               url_for("dashboard"), "sparkles")
-        flash(f"Creator '{name}' added to {brand['name']}. Login: {email} / {password}", "success")
+        if brand_id:
+            brand = db.query_one("SELECT name FROM users WHERE id=?", (brand_id,))
+            notify(uid, "Welcome" if lang() == "en" else "أهلاً بك",
+                   f"Account created by {brand['name']}",
+                   url_for("dashboard"), "sparkles")
+            flash(f"Creator '{name}' created (sponsor: {brand['name']}). Login: {email} / {password}", "success")
+        else:
+            notify(uid, "Welcome" if lang() == "en" else "أهلاً بك",
+                   "Your creator account is ready.", url_for("dashboard"), "sparkles")
+            flash(f"Creator '{name}' created (independent). Login: {email} / {password}", "success")
         return redirect(url_for("admin_user_detail", uid=uid))
     return render_template("admin/creator_new.html", brands=brands)
 

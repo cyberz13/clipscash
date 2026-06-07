@@ -5,7 +5,29 @@
     {% include "_dash_side.html" %}
     <div>
       <h1 style="font-family: var(--font-display);">{{ 'الحملات المتاحة' if lang=='ar' else 'Available campaigns' }}</h1>
-      <p class="muted">{{ campaigns|length }} {{ 'حملة نشطة من' if lang=='ar' else 'active campaigns from' }} <strong>{{ brand.name }}</strong></p>
+      <p class="muted">{{ campaigns|length }} {{ 'حملة نشطة من كل البرانددات' if lang=='ar' else 'active campaigns from all brands' }}</p>
+
+      <form class="filters" method="get">
+        <input type="text" name="q" value="{{ q or '' }}" placeholder="{{ t('search') }}…">
+        <select name="category">
+          <option value="">{{ t('all') }} — {{ t('category') }}</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if cat == selected_cat %}selected{% endif %}>{{ cat_label(cat) }}</option>
+          {% endfor %}
+        </select>
+        <select name="platform">
+          <option value="">{{ t('all') }} — {{ t('platform') }}</option>
+          {% for p in platforms %}
+            <option value="{{ p }}" {% if p == selected_plat %}selected{% endif %}>{{ p.upper() }}</option>
+          {% endfor %}
+        </select>
+        <select name="sort">
+          <option value="newest" {% if sort=='newest' %}selected{% endif %}>{{ 'الأحدث' if lang=='ar' else 'Newest' }}</option>
+          <option value="highest" {% if sort=='highest' %}selected{% endif %}>{{ 'الأعلى دفعاً' if lang=='ar' else 'Highest payout' }}</option>
+          <option value="budget" {% if sort=='budget' %}selected{% endif %}>{{ 'أكبر ميزانية' if lang=='ar' else 'Largest budget' }}</option>
+        </select>
+        <button class="btn btn-primary btn-sm">{{ t('search') }}</button>
+      </form>
 
       {% if campaigns %}
       <div class="campaigns-grid">
@@ -15,8 +37,8 @@
       </div>
       {% else %}
       <div class="empty">
-        <h3>{{ 'لا حملات متاحة الآن' if lang=='ar' else 'No campaigns available yet' }}</h3>
-        <p>{{ 'ستظهر هنا حالما تطلق ' if lang=='ar' else "They'll appear here once " }}<strong>{{ brand.name }}</strong>{{ ' حملة جديدة.' if lang=='ar' else " launches one." }}</p>
+        <h3>{{ 'لا حملات نشطة الآن' if lang=='ar' else 'No active campaigns right now' }}</h3>
+        <p>{{ 'جرّب تغيير الفلاتر أو ارجع لاحقاً.' if lang=='ar' else 'Try changing filters or check back later.' }}</p>
       </div>
       {% endif %}
     </div>

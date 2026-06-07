@@ -9,22 +9,16 @@
 
       <div class="form-card">
         <p class="sub">{{ 'اختر البراند الذي ينتمي إليه المبدع، وحدّد بياناته الأولية.' if lang=='ar' else 'Pick the brand this creator belongs to and set their initial credentials.' }}</p>
-        {% if not brands %}
-          <div class="empty">
-            <h3>{{ 'لا توجد برانددات بعد' if lang=='ar' else 'No brands yet' }}</h3>
-            <p>{{ 'يجب إنشاء براند واحد على الأقل قبل إضافة مبدعين.' if lang=='ar' else 'You must create at least one brand before adding creators.' }}</p>
-            <a class="btn btn-primary mt-2" href="{{ url_for('admin_brand_new') }}">+ {{ 'إضافة براند' if lang=='ar' else 'Add brand' }}</a>
-          </div>
-        {% else %}
         <form method="post">
           <div class="field">
-            <label>{{ 'البراند' if lang=='ar' else 'Brand' }}</label>
-            <select name="brand_id" required>
-              <option value="">— {{ 'اختر' if lang=='ar' else 'select' }} —</option>
+            <label>{{ 'البراند الراعي (اختياري)' if lang=='ar' else 'Sponsoring brand (optional)' }}</label>
+            <select name="brand_id">
+              <option value="">— {{ 'مستقل (يرى كل الحملات)' if lang=='ar' else 'Independent (sees all campaigns)' }} —</option>
               {% for b in brands %}
                 <option value="{{ b.id }}" {% if brand_id == b.id %}selected{% endif %}>{{ b.name }} ({{ b.email }})</option>
               {% endfor %}
             </select>
+            <div class="hint">{{ 'في وضع marketplace كل المبدعين يرون كل الحملات. الربط ببراند فقط للسجل.' if lang=='ar' else 'In marketplace mode all creators see all campaigns. The brand link is just for record-keeping.' }}</div>
           </div>
           <div class="field">
             <label>{{ 'الاسم الكامل' if lang=='ar' else 'Full name' }}</label>
@@ -51,7 +45,6 @@
             <button class="btn btn-primary">{{ 'إنشاء المبدع' if lang=='ar' else 'Create creator' }}</button>
           </div>
         </form>
-        {% endif %}
       </div>
     </div>
   </div>
