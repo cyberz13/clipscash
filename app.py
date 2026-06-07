@@ -497,29 +497,25 @@ def _normalize_ksa_phone(raw: str) -> str | None:
 def creator_withdraw():
     u = current_user()
     amount = parse_money_input(request.form.get("amount", ""))
-    method = request.form.get("method", "apple_pay")
-    if method not in ("apple_pay", "paypal", "wise", "usdt"):
-        flash("Invalid payout method.", "error")
-        return redirect(url_for("creator_wallet"))
     if amount < 1000:
         flash("Minimum withdrawal is $10.", "error")
         return redirect(url_for("creator_wallet"))
-    if method == "apple_pay":
-        phone_raw = (request.form.get("phone") or "").strip()
-        phone = _normalize_ksa_phone(phone_raw)
-        if not phone:
-            flash("Enter a valid phone number (KSA: 05X XXX XXXX)." if lang() == "en"
-                  else "أدخل رقم جوال صحيح (السعودية: ٠٥X XXX XXXX).", "error")
-            return redirect(url_for("creator_wallet"))
-        details = json.dumps({"type": "apple_pay", "phone": phone}, ensure_ascii=False)
-        human_summary = f"Apple Pay · {phone}"
-    else:
-        details_raw = (request.form.get("details") or "").strip()
-        if not details_raw:
-            flash("Payout details required.", "error")
-            return redirect(url_for("creator_wallet"))
-        details = details_raw
-        human_summary = f"{method}: {details_raw}"
+    phone_raw = (request.form.get("phone") or "").strip()
+    phone = _normalize_ksa_phone(phone_raw)
+    if not phone:
+        flash("أدخل رقم جوال صحيح (٠٥X XXX XXXX)." if lang() == "ar"
+              else "Enter a valid phone number.", "error")
+        return redirect(url_for("creator_wallet"))
+    preferred = (request.form.get("preferred") or "").strip()[:60]
+    note = (request.form.get("note") or "").strip()[:500]
+    method = "contact"
+    details = json.dumps({
+        "type": "contact",
+        "phone": phone,
+        "preferred": preferred,
+        "note": note,
+    }, ensure_ascii=False)
+    human_summary = f"{phone}" + (f" · {preferred}" if preferred else "")
 
     # Atomic conditional decrement — race-safe. Multiple concurrent withdrawals
     # can no longer overdraw because the WHERE clause is checked at UPDATE time.
