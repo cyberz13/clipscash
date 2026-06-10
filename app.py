@@ -207,6 +207,21 @@ def detect_platform(url: str) -> str:
 URL_RE = re.compile(r"^https?://[^\s]+$", re.I)
 
 
+def campaign_is_open(c) -> bool:
+    """A campaign accepts submissions only when active AND not past its end date
+    AND has budget remaining."""
+    if not c or c["status"] != "active":
+        return False
+    if c["ends_at"]:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        # ends_at stored as YYYY-MM-DD (date input); compare lexically (safe for ISO)
+        if str(c["ends_at"])[:10] < today:
+            return False
+    if c["budget_cents"] - c["spent_cents"] <= 0:
+        return False
+    return True
+
+
 def notify(user_id: int, title: str, body: str = "", link: str = "", icon: str = "bell"):
     db.execute(
         "INSERT INTO notifications (user_id, title, body, link, icon) VALUES (?,?,?,?,?)",
@@ -553,9 +568,21 @@ WIZ_SESS_KEY = "sub_wiz"
 @app.route("/campaigns/<int:cid>/submit")
 @login_required("creator")
 def submit_step1(cid):
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
-    if not c:
-        abort(404)
+    u = current_user()
+    c = db.query_one("SELECT * FROM campaigns WHERE id=?", (cid,))
+    if not campaign_is_open(c):
+        flash("هذه الحملة لم تعد تستقبل تقديمات." if lang() == "ar"
+              else "This campaign is no longer accepting submissions.", "error")
+        return redirect(url_for("creator_campaigns"))
+    # Prevent duplicate submission to the same campaign
+    dup = db.query_one(
+        "SELECT id FROM submissions WHERE campaign_id=? AND creator_id=? AND status IN ('pending','approved','paid')",
+        (cid, u["id"]),
+    )
+    if dup:
+        flash("لقد قدّمت على هذه الحملة بالفعل." if lang() == "ar"
+              else "You have already submitted to this campaign.", "info")
+        return redirect(url_for("creator_submissions"))
     session.pop(WIZ_SESS_KEY, None)
     return render_template("creator/submit_step1.html", c=c, step=1)
 
@@ -564,8 +591,8 @@ def submit_step1(cid):
 @login_required("creator")
 def submit_back(cid, step):
     """Render an earlier wizard step using preserved session state."""
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
-    if not c:
+    c = db.query_one("SELECT * FROM campaigns WHERE id=?", (cid,))
+    if not campaign_is_open(c):
         abort(404)
     state = session.get(WIZ_SESS_KEY, {})
     tpl = {1: "creator/submit_step1.html",
@@ -579,9 +606,11 @@ def submit_back(cid, step):
 @app.route("/campaigns/<int:cid>/submit/step/<int:step>", methods=["POST"])
 @login_required("creator")
 def submit_step(cid, step):
-    c = db.query_one("SELECT * FROM campaigns WHERE id=? AND status='active'", (cid,))
-    if not c:
-        abort(404)
+    c = db.query_one("SELECT * FROM campaigns WHERE id=?", (cid,))
+    if not campaign_is_open(c):
+        flash("هذه الحملة لم تعد تستقبل تقديمات." if lang() == "ar"
+              else "This campaign is no longer accepting submissions.", "error")
+        return redirect(url_for("creator_campaigns"))
     state = session.get(WIZ_SESS_KEY, {})
 
     if step == 1:
@@ -628,6 +657,16 @@ def submit_step(cid, step):
             flash("Stats must be numbers.", "error")
             return render_template("creator/submit_step4.html", c=c, step=4, state=state)
         u = current_user()
+        # Server-side duplicate guard (defends against double-submit / direct POST)
+        dup = db.query_one(
+            "SELECT id FROM submissions WHERE campaign_id=? AND creator_id=? AND status IN ('pending','approved','paid')",
+            (cid, u["id"]),
+        )
+        if dup:
+            session.pop(WIZ_SESS_KEY, None)
+            flash("لقد قدّمت على هذه الحملة بالفعل." if lang() == "ar"
+                  else "You have already submitted to this campaign.", "info")
+            return redirect(url_for("creator_submissions"))
         priors = db.query_one(
             """SELECT
                 COALESCE(SUM(CASE WHEN status IN ('approved','paid') THEN 1 ELSE 0 END),0) AS app,
@@ -922,14 +961,19 @@ def api_payout_preview():
 def brand_approve(sid):
     u = current_user()
     s = db.query_one(
-        """SELECT s.*, c.brand_id, c.payout_type, c.payout_rate_cents,
-                  c.budget_cents, c.spent_cents, c.id AS cid
+        """SELECT s.*, c.brand_id, c.status AS campaign_status, c.payout_type,
+                  c.payout_rate_cents, c.budget_cents, c.spent_cents,
+                  c.min_payout_cents, c.id AS cid
            FROM submissions s JOIN campaigns c ON c.id=s.campaign_id
            WHERE s.id=?""",
         (sid,),
     )
     if not s or s["brand_id"] != u["id"] or s["status"] != "pending":
         abort(404)
+    if s["campaign_status"] not in ("active", "paused"):
+        flash("لا يمكن الموافقة — الحملة منتهية." if lang() == "ar"
+              else "Cannot approve — campaign has ended.", "error")
+        return redirect(url_for("brand_review", sid=sid))
     try:
         vv = int(request.form.get("verified_views") or 0)
         vl = int(request.form.get("verified_likes") or 0)
@@ -938,16 +982,30 @@ def brand_approve(sid):
         flash("Verified stats must be numeric.", "error")
         return redirect(url_for("brand_review", sid=sid))
     payout = _payout_for(vv, vl, vc, s["payout_type"], s["payout_rate_cents"])
+    # Enforce per-submission minimum payout floor (if computed > 0)
+    min_payout = s["min_payout_cents"] or 0
+    if 0 < payout < min_payout:
+        payout = min_payout
     remaining = s["budget_cents"] - s["spent_cents"]
     if payout > remaining:
         payout = remaining
+    if payout < 0:
+        payout = 0
+    # Atomic, race-safe budget charge: only succeeds if budget still covers it.
+    charged = db.execute_returning_rowcount(
+        "UPDATE campaigns SET spent_cents = spent_cents + ? WHERE id=? AND spent_cents + ? <= budget_cents",
+        (payout, s["cid"], payout),
+    )
+    if charged == 0:
+        flash("تجاوزت ميزانية الحملة بسبب موافقة متزامنة — حدّث الصفحة." if lang() == "ar"
+              else "Campaign budget changed (concurrent approval). Refresh and retry.", "error")
+        return redirect(url_for("brand_review", sid=sid))
     db.execute(
         """UPDATE submissions SET status='approved', verified_views=?, verified_likes=?,
            verified_comments=?, earnings_cents=?, reviewed_at=datetime('now'),
            review_note=? WHERE id=?""",
         (vv, vl, vc, payout, request.form.get("note", ""), sid),
     )
-    db.execute("UPDATE campaigns SET spent_cents = spent_cents + ? WHERE id=?", (payout, s["cid"]))
     db.execute("UPDATE users SET balance_cents = balance_cents + ?, total_paid_cents = total_paid_cents + ? WHERE id=?",
                (payout, payout, s["creator_id"]))
     db.execute(

@@ -12,9 +12,14 @@ SCHEMA_PATH = ROOT / "schema.sql"
 
 def get_db() -> sqlite3.Connection:
     if "db" not in g:
-        conn = sqlite3.connect(DB_PATH)
+        # timeout: wait up to 10s for a lock instead of erroring immediately.
+        conn = sqlite3.connect(DB_PATH, timeout=10)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        # WAL = concurrent readers don't block the writer (multi-worker safe).
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA busy_timeout = 10000")
+        conn.execute("PRAGMA synchronous = NORMAL")
         g.db = conn
     return g.db
 
