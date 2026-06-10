@@ -40,6 +40,9 @@ ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = ROOT / "static" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# Public base URL for building absolute links in emails (no trailing slash)
+BASE_URL = os.environ.get("CLIPSCASH_BASE_URL", "https://clipscash.app").rstrip("/")
+
 app = Flask(__name__)
 
 # === Production-aware config ===
@@ -222,11 +225,27 @@ def campaign_is_open(c) -> bool:
     return True
 
 
-def notify(user_id: int, title: str, body: str = "", link: str = "", icon: str = "bell"):
+def notify(user_id: int, title: str, body: str = "", link: str = "", icon: str = "bell",
+           email: bool = False):
+    """Create an in-app notification. If email=True and the user has a verified
+    email, also send it via SMTP (best-effort; never blocks the request)."""
     db.execute(
         "INSERT INTO notifications (user_id, title, body, link, icon) VALUES (?,?,?,?,?)",
         (user_id, title, body, link, icon),
     )
+    if email:
+        try:
+            row = db.query_one(
+                "SELECT email, name, lang, email_verified FROM users WHERE id=?", (user_id,)
+            )
+            if row and row["email"] and row["email_verified"]:
+                full_link = link if str(link).startswith("http") else (BASE_URL + link if link else BASE_URL)
+                subject, html = mailer.render_notification_email(
+                    row["name"], title, body, full_link, row["lang"] or "ar"
+                )
+                mailer.send_email(row["email"], subject, html)
+        except Exception as _e:
+            print(f"[notify:email] failed for user {user_id}: {_e}")
 
 
 # ============================================================
@@ -475,6 +494,25 @@ def creator_submissions():
     sql += " ORDER BY s.created_at DESC"
     subs = db.query(sql, tuple(params))
     return render_template("creator/submissions.html", subs=subs, status_f=status)
+
+
+@app.route("/creator/submissions/<int:sid>/withdraw", methods=["POST"])
+@login_required("creator")
+def creator_withdraw_submission(sid):
+    """Creator cancels their own still-pending submission."""
+    u = current_user()
+    s = db.query_one(
+        "SELECT id, status FROM submissions WHERE id=? AND creator_id=?", (sid, u["id"])
+    )
+    if not s:
+        abort(404)
+    if s["status"] != "pending":
+        flash("لا يمكن سحب تقديم تمت مراجعته." if lang() == "ar"
+              else "Cannot withdraw a reviewed submission.", "error")
+        return redirect(url_for("creator_submissions"))
+    db.execute("DELETE FROM submissions WHERE id=?", (sid,))
+    flash("تم سحب التقديم." if lang() == "ar" else "Submission withdrawn.", "success")
+    return redirect(url_for("creator_submissions"))
 
 
 @app.route("/creator/wallet")
@@ -1013,9 +1051,10 @@ def brand_approve(sid):
         (s["creator_id"], "earning", payout, "Approved submission earning", sid),
     )
     notify(s["creator_id"],
-           "Submission approved" if lang() == "en" else "تمت الموافقة",
-           f"You earned {fmt_money(payout)}",
-           url_for("creator_submissions"), "check")
+           "Submission approved" if lang() == "en" else "تمت الموافقة على تقديمك",
+           (f"You earned {fmt_money(payout)}" if lang() == "en"
+            else f"ربحت {fmt_money(payout)}"),
+           url_for("creator_submissions"), "check", email=True)
     flash(f"Approved. {fmt_money(payout)} credited.", "success")
     return redirect(url_for("brand_campaign_detail", cid=s["cid"], tab="submissions"))
 
@@ -1037,9 +1076,9 @@ def brand_reject(sid):
         (note, sid),
     )
     notify(s["creator_id"],
-           "Submission rejected" if lang() == "en" else "تم رفض التقديم",
-           note or "No reason given",
-           url_for("creator_submissions"), "x")
+           "Submission rejected" if lang() == "en" else "تم رفض تقديمك",
+           note or ("No reason given" if lang() == "en" else "بدون سبب محدّد"),
+           url_for("creator_submissions"), "x", email=True)
     flash("Submission rejected.", "info")
     return redirect(url_for("brand_campaign_detail", cid=s["cid"], tab="submissions"))
 
@@ -1221,8 +1260,29 @@ def admin_index():
 @app.route("/admin/users")
 @login_required("admin")
 def admin_users():
-    users = db.query("SELECT * FROM users ORDER BY created_at DESC LIMIT 200")
-    return render_template("admin/users.html", users=users)
+    q = (request.args.get("q") or "").strip()
+    role_f = request.args.get("role", "")
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+    per = 50
+    where = "WHERE 1=1"
+    params: list = []
+    if q:
+        where += " AND (name LIKE ? OR email LIKE ?)"
+        params += [f"%{q}%", f"%{q}%"]
+    if role_f in ("creator", "brand", "admin", "fan"):
+        where += " AND role=?"
+        params.append(role_f)
+    total = db.query_one(f"SELECT COUNT(*) c FROM users {where}", tuple(params))["c"]
+    users = db.query(
+        f"SELECT * FROM users {where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        tuple(params) + (per, (page - 1) * per),
+    )
+    pages = max(1, (total + per - 1) // per)
+    return render_template("admin/users.html", users=users, q=q, role_f=role_f,
+                           page=page, pages=pages, total=total)
 
 
 @app.route("/admin/campaigns")
@@ -1648,9 +1708,12 @@ def admin_payout_status(pid):
                    (p["amount_cents"], p["user_id"]))
         db.execute("INSERT INTO wallet_tx (user_id, kind, amount_cents, note, ref_id) VALUES (?,?,?,?,?)",
                    (p["user_id"], "refund", p["amount_cents"], "Withdrawal failed — refunded by admin", pid))
-    notify(p["user_id"], f"Withdrawal {status}" if lang() == "en" else f"السحب: {status}",
-           reference or f"{fmt_money(p['amount_cents'])}",
-           url_for("creator_wallet"), "wallet")
+    status_ar = {"pending": "قيد الانتظار", "processing": "قيد المعالجة",
+                 "completed": "اكتمل", "failed": "فشل"}.get(status, status)
+    notify(p["user_id"],
+           (f"Withdrawal {status}" if lang() == "en" else f"حالة السحب: {status_ar}"),
+           (reference or fmt_money(p['amount_cents'])),
+           url_for("creator_wallet"), "wallet", email=True)
     flash(f"Payout marked {status}.", "success")
     return redirect(url_for("admin_payouts"))
 
@@ -1956,6 +2019,16 @@ def creator_amplify(sid):
     share_url = url_for("view_share", token=s["share_token"], _external=True)
     return render_template("creator/amplify.html",
                            s=s, total=total, top_fans=top_fans, share_url=share_url)
+
+
+@app.route("/healthz")
+def healthz():
+    """Lightweight health probe for uptime monitors. Checks DB connectivity."""
+    try:
+        db.query_one("SELECT 1")
+        return jsonify(status="ok"), 200
+    except Exception as e:
+        return jsonify(status="error", detail=str(e)[:120]), 503
 
 
 @app.errorhandler(404)

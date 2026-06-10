@@ -4,8 +4,21 @@
   <div class="dash-grid">
     {% include "_dash_side.html" %}
     <div>
-      <h1 style="font-family: var(--font-display);">Users</h1>
+      <h1 style="font-family: var(--font-display);">Users <span class="muted" style="font-size:16px;">({{ total }})</span></h1>
+
+      <form class="filters" method="get">
+        <input type="text" name="q" value="{{ q }}" placeholder="{{ 'بحث بالاسم أو البريد' if lang=='ar' else 'Search name or email' }}…">
+        <select name="role" onchange="this.form.submit()">
+          <option value="">{{ 'كل الأدوار' if lang=='ar' else 'All roles' }}</option>
+          {% for r in ['admin','brand','creator','fan'] %}
+            <option value="{{ r }}" {% if r == role_f %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-primary btn-sm">{{ 'بحث' if lang=='ar' else 'Search' }}</button>
+      </form>
+
       <div class="table-card">
+        {% if users %}
         <table class="data">
           <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Balance</th><th>Status</th><th>Created</th><th></th></tr></thead>
           <tbody>
@@ -21,7 +34,22 @@
             {% endfor %}
           </tbody>
         </table>
+        {% else %}
+        <div class="empty"><h3>{{ 'لا نتائج' if lang=='ar' else 'No results' }}</h3></div>
+        {% endif %}
       </div>
+
+      {% if pages > 1 %}
+      <div class="flex" style="justify-content:center; gap:8px; margin-top:20px; align-items:center;">
+        {% if page > 1 %}
+          <a class="btn btn-sm" href="{{ url_for('admin_users', q=q, role=role_f, page=page-1) }}">← {{ 'السابق' if lang=='ar' else 'Prev' }}</a>
+        {% endif %}
+        <span class="muted">{{ page }} / {{ pages }}</span>
+        {% if page < pages %}
+          <a class="btn btn-sm" href="{{ url_for('admin_users', q=q, role=role_f, page=page+1) }}">{{ 'التالي' if lang=='ar' else 'Next' }} →</a>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

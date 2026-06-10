@@ -74,6 +74,35 @@ def _html_to_text(html: str) -> str:
 
 # ---------- email templates ----------
 
+def render_notification_email(name: str, title: str, body: str, link: str,
+                              lang: str = "ar") -> tuple[str, str]:
+    """Generic transactional notification email (approval, rejection, payout...)."""
+    is_ar = lang == "ar"
+    dir_attr = "rtl" if is_ar else "ltr"
+    cta = "افتح كليبس كاش" if is_ar else "Open Clipscash"
+    greeting = f"مرحباً {name}،" if is_ar else f"Hi {name},"
+    foot = ("هذه رسالة آلية من كليبس كاش." if is_ar
+            else "This is an automated message from Clipscash.")
+    subject = f"{title} — {'كليبس كاش' if is_ar else 'Clipscash'}"
+    html = f"""<!DOCTYPE html>
+<html lang="{lang}" dir="{dir_attr}"><body style="font-family:{'Tahoma' if is_ar else 'Arial'},sans-serif;background:#0b0b0b;color:#ece4d3;padding:32px;margin:0;">
+  <div style="max-width:520px;margin:0 auto;background:#181818;border:1px solid #262626;border-radius:14px;padding:32px;">
+    <div style="font-weight:800;font-size:22px;letter-spacing:-1px;margin-bottom:20px;">
+      CLIPS<span style="color:#c8ff5e">CASH</span>
+    </div>
+    <p style="color:#9a9388;margin:0 0 12px;">{greeting}</p>
+    <h2 style="color:#ece4d3;margin:0 0 10px;font-size:20px;">{title}</h2>
+    <p style="color:#9a9388;line-height:1.6;margin:0 0 24px;">{body or ''}</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="{link}" style="display:inline-block;background:#c8ff5e;color:#0c1500;
+         padding:12px 28px;border-radius:999px;font-weight:700;text-decoration:none;">{cta}</a>
+    </div>
+    <p style="color:#9a9388;font-size:12px;border-top:1px solid #262626;padding-top:16px;margin-top:24px;">{foot}</p>
+  </div>
+</body></html>"""
+    return subject, html
+
+
 def render_verification_email(name: str, link: str, lang: str = "ar") -> tuple[str, str]:
     """Returns (subject, html_body)."""
     if lang == "ar":

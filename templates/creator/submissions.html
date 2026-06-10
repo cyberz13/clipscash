@@ -27,6 +27,7 @@
               <th>{{ t('status') }}</th>
               <th>{{ 'الأرباح' if lang=='ar' else 'Earnings' }}</th>
               <th>{{ 'الفيديو' if lang=='ar' else 'Video' }}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -42,6 +43,15 @@
               <td>
                 <a href="{{ s.video_url }}" target="_blank" class="text-accent" title="{{ 'فتح الفيديو' if lang=='ar' else 'Open video' }}">↗</a>
                 <a href="{{ url_for('creator_amplify', sid=s.id) }}" class="text-accent" title="{{ 'دعم المعجبين' if lang=='ar' else 'Fan amplification' }}" style="margin-inline-start:8px;">📣</a>
+              </td>
+              <td>
+                {% if s.status == 'pending' %}
+                {% set confirm_msg = 'سحب هذا التقديم؟' if lang == 'ar' else 'Withdraw this submission?' %}
+                <form method="post" action="{{ url_for('creator_withdraw_submission', sid=s.id) }}"
+                      onsubmit="return confirm('{{ confirm_msg }}')">
+                  <button class="btn btn-sm btn-danger">{{ 'سحب' if lang=='ar' else 'Withdraw' }}</button>
+                </form>
+                {% else %}<span class="muted">—</span>{% endif %}
               </td>
             </tr>
             {% endfor %}
