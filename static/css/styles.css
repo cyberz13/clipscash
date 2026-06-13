@@ -59,6 +59,14 @@ button, input, select, textarea { font-family: var(--font); color: inherit; }
 .nav { position: sticky; top: 0; z-index: 50;
   backdrop-filter: blur(14px); background: rgba(10,10,15,.8);
   border-bottom: 1px solid var(--border); }
+/* Landing-page nav (neon handoff): flex row, not sticky */
+header .nav {
+  position: static; backdrop-filter: none; background: transparent;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-block: 24px; gap: 24px;
+}
+header .nav .links { display: flex; gap: 28px; font-size: 14.5px; color: var(--muted); font-weight: 600; }
+header .nav .links a:hover { color: var(--accent); }
 .nav-inner {
   display: flex; align-items: center; gap: 28px;
   padding: 18px 40px; max-width: 1280px; margin: 0 auto;
