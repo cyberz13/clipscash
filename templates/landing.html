@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v={{ asset_v }}" />
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}" />
 <style>
   .lp-hero { position: relative; display: grid; grid-template-columns: 1.15fr 1fr; gap: 60px; align-items: center; padding-block: 90px 100px; }

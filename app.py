@@ -43,6 +43,13 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Public base URL for building absolute links in emails (no trailing slash)
 BASE_URL = os.environ.get("CLIPSCASH_BASE_URL", "https://clipscash.app").rstrip("/")
 
+# Cache-busting version for static assets (mtime of styles.css). Changes on every
+# deploy that touches CSS, forcing browsers to fetch the fresh file.
+try:
+    ASSET_VERSION = str(int((ROOT / "static" / "css" / "styles.css").stat().st_mtime))
+except Exception:
+    ASSET_VERSION = "1"
+
 app = Flask(__name__)
 
 # === Production-aware config ===
@@ -306,6 +313,7 @@ def inject_globals():
         "platforms": PLATFORMS,
         "payout_types": PAYOUT_TYPES,
         "csrf_token": _csrf_token(),
+        "asset_v": ASSET_VERSION,
     }
 
 
