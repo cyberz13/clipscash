@@ -315,10 +315,10 @@ def inject_globals():
 
 @app.route("/")
 def index():
-    """Closed B2B: root goes straight to login (or dashboard if logged in)."""
+    """Marketing landing page (neon design). Logged-in users go to dashboard."""
     if current_user():
         return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
+    return render_template("landing.html")
 
 
 @app.route("/campaigns/<int:cid>")

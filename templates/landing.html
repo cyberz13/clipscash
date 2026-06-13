@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if rtl else 'ltr' }}">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{ t('brand_name') }} — {{ t('tagline') }}</title>
+<meta name="description" content="{{ t('hero_sub') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}" />
+<style>
+  .lp-hero { position: relative; display: grid; grid-template-columns: 1.15fr 1fr; gap: 60px; align-items: center; padding-block: 90px 100px; }
+  .lp-hero h1 { font-size: clamp(38px,6vw,64px); font-weight: 800; line-height: 1.25; letter-spacing: -0.01em; margin: 0; }
+  .lp-hero .sub { font-size: 19px; line-height: 1.9; color: var(--muted); max-width: 560px; }
+  .lp-hero-col { display: flex; flex-direction: column; gap: 30px; align-items: flex-start; position: relative; z-index: 2; }
+  .lp-hero-stack { position: relative; height: 500px; }
+  @media (max-width: 920px) { .lp-hero { grid-template-columns: 1fr; } .lp-hero-stack { display: none; } }
+  .lp-steps { padding-block: 80px; border-top: 1px solid var(--border); }
+  .lp-step-row { display: grid; grid-template-columns: 140px 1fr 1.4fr; gap: 32px; align-items: center; padding-block: 30px; border-top: 1px solid var(--border); }
+  .lp-step-row:first-of-type { border-top: none; }
+  .lp-step-row .num { font-size: 64px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .lp-step-row h3 { font-size: 24px; font-weight: 700; margin: 0; }
+  .lp-step-row p { font-size: 16px; line-height: 1.9; color: var(--muted); margin: 0; }
+  @media (max-width: 720px) { .lp-step-row { grid-template-columns: 1fr; gap: 10px; } .lp-step-row .num { font-size: 44px; } }
+  .lp-platforms { padding-block: 72px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 28px; align-items: center; text-align: center; }
+  .lp-plat-tile { padding: 22px 48px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); font-size: 22px; font-weight: 800; transition: border-color .15s ease, transform .15s ease; }
+  .lp-plat-tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .lp-plat-row { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .lp-cta-band { background: var(--accent); color: var(--accent-ink); border-radius: var(--radius-lg); padding: 64px 70px; display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+  .lp-cta-band h2 { font-size: clamp(28px,4vw,38px); font-weight: 800; line-height: 1.4; margin: 0; }
+  .lp-cta-band p { font-size: 17px; line-height: 1.9; color: color-mix(in srgb, var(--accent-ink) 65%, transparent); margin: 0; }
+  .lp-footer { border-top: 1px solid var(--border); }
+  .lp-footer-in { display: flex; align-items: center; justify-content: space-between; padding-block: 30px; gap: 20px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="nav">
+      <div style="display: flex; align-items: center; gap: 40px;">
+        <a href="{{ url_for('index') }}"><img class="logo-img" src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ t('brand_name') }}" style="height:24px;display:block;" /></a>
+        <nav class="links" style="display: flex; gap: 28px;">
+          <a href="#how">{{ 'كيف تعمل' if lang=='ar' else 'How it works' }}</a>
+          <a href="#platforms">{{ 'المنصات' if lang=='ar' else 'Platforms' }}</a>
+          <a href="#brands">{{ 'للبراندات' if lang=='ar' else 'For brands' }}</a>
+        </nav>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a class="lang-toggle" href="{{ url_for('set_lang', l='en' if lang=='ar' else 'ar') }}">{{ t('switch_lang') }}</a>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('login') }}">{{ t('nav_signin') }}</a>
+        <a class="btn btn-sm" href="#brands">{{ 'تواصل معنا' if lang=='ar' else 'Contact us' }}</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="container lp-hero">
+  <div class="glow" style="top: -180px; inset-inline-start: -120px; width: 760px; height: 520px;"></div>
+  <div class="lp-hero-col">
+    <span class="chip chip--accent">{{ 'منصة B2B مغلقة · بدعوة فقط' if lang=='ar' else 'Closed B2B · invite-only' }}</span>
+    <h1>{% if lang=='ar' %}<span>البراند ينشر الحملة.</span><br /><span style="color: var(--accent);">المبدع يقصّ ويربح.</span>{% else %}<span>Brands post campaigns.</span><br /><span style="color: var(--accent);">Creators clip & earn.</span>{% endif %}</h1>
+    <p class="sub">{{ 'كليبس كاش منصة تربط البراندات بصنّاع الكليبات: حملات بميزانيات واضحة، أرباح تُحسب على كل ألف مشاهدة — على تيك توك وريلز وشورتس وX.' if lang=='ar' else 'Clipscash connects brands with clippers: campaigns with clear budgets, earnings per 1K views — on TikTok, Reels, Shorts, and X.' }}</p>
+    <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+      <a class="btn btn--lg" href="#brands">{{ 'تواصل معنا' if lang=='ar' else 'Contact us' }}</a>
+      <a class="btn btn-ghost btn--lg" href="{{ url_for('login') }}">{{ t('nav_signin') }}</a>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <span class="chip">{{ 'تيك توك' if lang=='ar' else 'TikTok' }}</span>
+      <span class="chip">{{ 'ريلز' if lang=='ar' else 'Reels' }}</span>
+      <span class="chip">{{ 'شورتس' if lang=='ar' else 'Shorts' }}</span>
+      <span class="chip">X</span>
+    </div>
+  </div>
+  <div class="lp-hero-stack">
+    <div class="card card--float" style="position: absolute; top: 0; inset-inline-end: 30px; transform: rotate(3deg); width: 210px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+      <div class="thumb" style="height: 280px;"><span>clip 9:16</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--muted);">{{ 'المشاهدات' if lang=='ar' else 'Views' }}</span>
+        <b style="font-size: 14px; font-weight: 800;">412K</b>
+      </div>
+      <div class="progress"><i style="width: 82%;"></i></div>
+    </div>
+    <div class="card card--float" style="position: absolute; top: 160px; inset-inline-start: 0; transform: rotate(-2deg); width: 280px; display: flex; flex-direction: column; gap: 14px;">
+      <span style="font-size: 12.5px; color: var(--muted); font-weight: 600;">{{ 'أرباحك هذا الأسبوع' if lang=='ar' else 'Your earnings this week' }}</span>
+      <b style="font-size: 34px; font-weight: 800; line-height: 1;">1,283 ر.س</b>
+      <div style="display: flex; align-items: flex-end; gap: 7px; height: 64px;">
+        <span style="flex: 1; height: 34%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+        <span style="flex: 1; height: 58%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+        <span style="flex: 1; height: 42%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+        <span style="flex: 1; height: 76%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+        <span style="flex: 1; height: 60%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+        <span style="flex: 1; height: 92%; border-radius: 4px; background: var(--accent);"></span>
+        <span style="flex: 1; height: 70%; border-radius: 4px; background: rgba(255,255,255,.10);"></span>
+      </div>
+      <span style="font-size: 12px; color: var(--accent); font-weight: 700;">{{ '+18% عن الأسبوع الماضي' if lang=='ar' else '+18% vs last week' }}</span>
+    </div>
+    <div class="card card--float" style="position: absolute; bottom: 0; inset-inline-end: 0; transform: rotate(-1deg); width: 320px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="avatar avatar--sq" style="width: 40px; height: 40px; border-radius: 12px;"></span>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <b style="font-size: 14.5px; font-weight: 700;">{{ 'حملة عطر سبارك' if lang=='ar' else 'Spark Perfume Campaign' }}</b>
+          <span style="font-size: 12px; color: var(--muted);">{{ 'سعر الألف مشاهدة · ٤.٥ ر.س' if lang=='ar' else 'Per 1K views · 4.5 SAR' }}</span>
+        </div>
+        <span class="chip chip--on chip--xs" style="margin-inline-start: auto;">{{ 'نشطة' if lang=='ar' else 'Active' }}</span>
+      </div>
+      <div class="progress"><i style="width: 64%;"></i></div>
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);">
+        <span>{{ 'الميزانية المتبقية' if lang=='ar' else 'Budget left' }}</span>
+        <b style="color: var(--text); font-weight: 700;">{{ '13,500 من 37,500 ر.س' if lang=='ar' else '13,500 of 37,500 SAR' }}</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee">
+  <div class="marquee-track">
+    {% for i in range(3) %}<span>{{ 'تيك توك' if lang=='ar' else 'TIKTOK' }}</span><span>{{ 'ريلز' if lang=='ar' else 'REELS' }}</span><span>{{ 'شورتس' if lang=='ar' else 'SHORTS' }}</span><span>X</span>{% endfor %}
+  </div>
+</div>
+
+<section class="container lp-steps" id="how">
+  <div class="sec-head" style="margin-bottom: 36px;">
+    <h2 style="font-size: clamp(28px,4vw,40px); font-weight: 800;">{{ 'كيف تعمل المنصة' if lang=='ar' else 'How it works' }}</h2>
+    <span style="font-size: 15px; color: var(--muted);">{{ 'ثلاث خطوات من الحملة إلى الأرباح' if lang=='ar' else 'Three steps from campaign to payout' }}</span>
+  </div>
+  <div class="lp-step-row">
+    <span class="num">01</span>
+    <h3>{{ 'البراند يطلق الحملة' if lang=='ar' else 'Brand launches a campaign' }}</h3>
+    <p>{{ 'يحدّد الميزانية وسعر الألف مشاهدة، ويرفع المواد الأصلية والتعليمات.' if lang=='ar' else 'Sets budget and per-1K rate, uploads source material and instructions.' }}</p>
+  </div>
+  <div class="lp-step-row">
+    <span class="num">02</span>
+    <h3>{{ 'المبدع يقصّ وينشر' if lang=='ar' else 'Creator clips & posts' }}</h3>
+    <p>{{ 'يختار الحملة، يصنع الكليب بأسلوبه، وينشره على حسابه في المنصة التي يجيدها.' if lang=='ar' else 'Picks a campaign, makes a clip in their style, posts on their account.' }}</p>
+  </div>
+  <div class="lp-step-row">
+    <span class="num">03</span>
+    <h3>{{ 'الأرباح تُحسب تلقائياً' if lang=='ar' else 'Earnings calculated automatically' }}</h3>
+    <p>{{ 'المشاهدات تُتتبّع، والأرباح تُضاف للرصيد وتُسحب بعد الموافقة.' if lang=='ar' else 'Views are tracked; earnings hit the wallet and are withdrawn after approval.' }}</p>
+  </div>
+</section>
+
+<section class="container lp-platforms" id="platforms">
+  <span style="font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: .04em;">{{ 'المنصات المدعومة' if lang=='ar' else 'Supported platforms' }}</span>
+  <div class="lp-plat-row">
+    <div class="lp-plat-tile">{{ 'تيك توك' if lang=='ar' else 'TikTok' }}</div>
+    <div class="lp-plat-tile">{{ 'ريلز' if lang=='ar' else 'Reels' }}</div>
+    <div class="lp-plat-tile">{{ 'شورتس' if lang=='ar' else 'Shorts' }}</div>
+    <div class="lp-plat-tile">X</div>
+  </div>
+  <span style="font-size: 15px; color: var(--muted);">{{ 'أربع منصات، لوحة واحدة، وتقرير أرباح موحّد.' if lang=='ar' else 'Four platforms, one dashboard, one unified earnings report.' }}</span>
+</section>
+
+<section class="container" id="brands" style="padding-block: 70px; border-top: 1px solid var(--border);">
+  <div class="lp-cta-band">
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 640px;">
+      <h2>{{ 'جاهز تطلق حملتك الأولى؟' if lang=='ar' else 'Ready to launch your first campaign?' }}</h2>
+      <p>{{ 'المنصة مغلقة، والحسابات تُنشأ عبر مدير المنصة. تواصل معنا وسنجهّز حسابك وحملتك خلال يوم عمل.' if lang=='ar' else 'The platform is closed; accounts are created by the platform admin. Contact us and we will set up your account and campaign within a business day.' }}</p>
+    </div>
+    <a class="btn btn--lg" style="background: var(--bg); color: var(--accent);" href="mailto:hello@clipscash.app">{{ 'تواصل معنا' if lang=='ar' else 'Contact us' }}</a>
+  </div>
+</section>
+
+<footer class="lp-footer">
+  <div class="container lp-footer-in">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ t('brand_name') }}" style="height: 18px; display: block;" />
+    <div style="display: flex; gap: 26px; font-size: 13.5px; color: var(--muted);">
+      <span>{{ 'الشروط' if lang=='ar' else 'Terms' }}</span>
+      <span>{{ 'الخصوصية' if lang=='ar' else 'Privacy' }}</span>
+      <span>{{ 'تواصل' if lang=='ar' else 'Contact' }}</span>
+    </div>
+    <span style="font-size: 13.5px; color: var(--faint);">{{ t('footer_copy') }}</span>
+  </div>
+</footer>
+
+</body>
+</html>
