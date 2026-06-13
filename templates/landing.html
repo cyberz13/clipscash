@@ -33,9 +33,90 @@
   .lp-cta-band p { font-size: 17px; line-height: 1.9; color: color-mix(in srgb, var(--accent-ink) 65%, transparent); margin: 0; }
   .lp-footer { border-top: 1px solid var(--border); }
   .lp-footer-in { display: flex; align-items: center; justify-content: space-between; padding-block: 30px; gap: 20px; flex-wrap: wrap; }
+
+  /* ===== Playhead splash ===== */
+  .splash {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden;
+  }
+  .splash.done {
+    animation: splashOut .7s cubic-bezier(.66,0,.2,1) forwards;
+  }
+  .splash.done.skip { animation-duration: .32s; }
+  @keyframes splashOut {
+    to { opacity: 0; transform: scale(1.07); visibility: hidden; }
+  }
+  .splash-stage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+  /* halo */
+  .splash-halo {
+    position: absolute; top: 50%; left: 50%; width: 520px; height: 520px;
+    transform: translate(-50%, -60%) scale(.6);
+    border-radius: 50%; opacity: 0; pointer-events: none;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%);
+  }
+  .splash.run .splash-halo { animation: haloPulse 1.0s cubic-bezier(.66,0,.2,1) .95s; }
+  @keyframes haloPulse {
+    0%   { opacity: 0; transform: translate(-50%,-60%) scale(.6); }
+    45%  { opacity: 1; transform: translate(-50%,-60%) scale(1.05); }
+    100% { opacity: 0; transform: translate(-50%,-60%) scale(1.18); }
+  }
+
+  /* logo + playhead */
+  .splash-logo-wrap { position: relative; display: inline-block; }
+  .splash-logo {
+    height: clamp(34px, 6vw, 60px); display: block;
+    -webkit-clip-path: inset(0 0 0 100%);
+    clip-path: inset(0 0 0 100%);
+  }
+  .splash.run .splash-logo { animation: logoReveal 1.0s cubic-bezier(.66,0,.2,1) .35s forwards; }
+  @keyframes logoReveal {
+    from { -webkit-clip-path: inset(0 0 0 100%); clip-path: inset(0 0 0 100%); }
+    to   { -webkit-clip-path: inset(0 0 0 0);    clip-path: inset(0 0 0 0); }
+  }
+  .splash-playhead {
+    position: absolute; top: -10%; height: 120%; width: 2.5px; left: 100%;
+    background: var(--accent);
+    box-shadow: 0 0 14px 2px var(--accent), 0 0 28px 6px color-mix(in srgb, var(--accent) 55%, transparent);
+    opacity: 0; border-radius: 2px;
+  }
+  .splash.run .splash-playhead { animation: playhead 1.0s cubic-bezier(.66,0,.2,1) .35s forwards; }
+  @keyframes playhead {
+    0%   { left: 100%; opacity: 0; }
+    8%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { left: -5px; opacity: 0; }
+  }
+
+  /* timeline ruler */
+  .splash-ruler { display: flex; gap: 7px; align-items: flex-end; height: 18px; opacity: 0; }
+  .splash.run .splash-ruler { animation: rulerIn .5s ease-out .55s forwards; }
+  @keyframes rulerIn { from { opacity: 0; transform: translateY(6px); } to { opacity: .5; transform: none; } }
+  .splash-ruler .tick { width: 2px; height: 7px; border-radius: 2px; background: var(--muted); }
+  .splash-ruler .tick--major { height: 14px; background: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash { display: none !important; }
+  }
 </style>
 </head>
 <body>
+
+<!-- ===== Playhead splash (clip-editor metaphor) ===== -->
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-stage">
+    <div class="splash-halo" id="splashHalo"></div>
+    <div class="splash-logo-wrap">
+      <img class="splash-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ t('brand_name') }}" />
+      <span class="splash-playhead" id="splashPlayhead"></span>
+    </div>
+    <div class="splash-ruler" id="splashRuler">
+      {% for i in range(40) %}<span class="tick{% if i % 5 == 0 %} tick--major{% endif %}"></span>{% endfor %}
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="container">
@@ -175,6 +256,38 @@
     <span style="font-size: 13.5px; color: var(--faint);">{{ t('footer_copy') }}</span>
   </div>
 </footer>
+
+<script>
+(function(){
+  var splash = document.getElementById('splash');
+  if (!splash) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Show once per browser session, and never if user prefers reduced motion
+  if (reduce || sessionStorage.getItem('clip_splash_seen')) { splash.remove(); return; }
+
+  document.documentElement.style.overflow = 'hidden';
+  // kick off animations on next frame
+  requestAnimationFrame(function(){ splash.classList.add('run'); });
+
+  var exited = false;
+  function exit(fast){
+    if (exited) return; exited = true;
+    sessionStorage.setItem('clip_splash_seen', '1');
+    if (fast) splash.classList.add('skip');
+    splash.classList.add('done');
+    setTimeout(function(){
+      splash.remove();
+      document.documentElement.style.overflow = '';
+    }, fast ? 350 : 720);
+  }
+
+  // natural end ≈ 1.85s, then splashOut runs
+  var timer = setTimeout(function(){ exit(false); }, 1850);
+  // click/tap/key skips
+  splash.addEventListener('click', function(){ clearTimeout(timer); exit(true); });
+  window.addEventListener('keydown', function(){ clearTimeout(timer); exit(true); }, { once: true });
+})();
+</script>
 
 </body>
 </html>
