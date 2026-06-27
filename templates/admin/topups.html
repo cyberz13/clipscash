@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="dash-grid">
+    {% include "_dash_side.html" %}
+    <div>
+      <h1 style="font-family: var(--font-display);">{{ 'طلبات شحن المحفظة' if lang=='ar' else 'Wallet top-up requests' }}
+        {% if pending_count %}<span class="chip pending" style="font-size:14px;">{{ pending_count }} {{ 'معلّق' if lang=='ar' else 'pending' }}</span>{% endif %}
+      </h1>
+
+      <form class="filters" method="get">
+        <select name="status" onchange="this.form.submit()">
+          <option value="">{{ 'الكل' if lang=='ar' else 'All' }}</option>
+          {% for s in ['pending','approved','rejected'] %}
+            <option value="{{ s }}" {% if s == status_f %}selected{% endif %}>{{ t(s) if s in ['approved','rejected','pending'] else s }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <div class="table-card">
+        {% if rows %}
+        <table class="data">
+          <thead><tr>
+            <th>{{ 'التاريخ' if lang=='ar' else 'Date' }}</th>
+            <th>{{ 'البراند' if lang=='ar' else 'Brand' }}</th>
+            <th>{{ 'المبلغ' if lang=='ar' else 'Amount' }}</th>
+            <th>{{ 'الطريقة / المرجع' if lang=='ar' else 'Method / Ref' }}</th>
+            <th>{{ 'إثبات' if lang=='ar' else 'Proof' }}</th>
+            <th>{{ 'الحالة' if lang=='ar' else 'Status' }}</th>
+            <th>{{ 'إجراء' if lang=='ar' else 'Action' }}</th>
+          </tr></thead>
+          <tbody>
+            {% for r in rows %}
+            <tr>
+              <td class="muted">{{ r.created_at[:16] }}</td>
+              <td>{{ r.brand_name }}<br><span class="muted" style="font-size:11px;">{{ r.brand_email }}</span></td>
+              <td><strong>{{ fmt_money(r.amount_cents) }}</strong></td>
+              <td>{{ r.method }}{% if r.reference %}<br><span class="muted" style="font-size:11px;">{{ r.reference }}</span>{% endif %}
+                  {% if r.note %}<div class="muted" style="font-size:11px;">{{ r.note }}</div>{% endif %}</td>
+              <td>{% if r.proof_url %}<a href="{{ r.proof_url }}" target="_blank" class="text-accent">{{ 'عرض' if lang=='ar' else 'View' }} ↗</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td><span class="chip {{ 'approved' if r.status=='approved' else ('rejected' if r.status=='rejected' else 'pending') }}">{{ t(r.status) if r.status in ['approved','rejected','pending'] else r.status }}</span>
+                  {% if r.admin_note %}<div class="muted" style="font-size:11px;margin-top:4px;">{{ r.admin_note }}</div>{% endif %}</td>
+              <td>
+                {% if r.status == 'pending' %}
+                <form method="post" action="{{ url_for('admin_topup_approve', rid=r.id) }}" style="margin-bottom:6px;">
+                  <button class="btn btn-sm btn-primary">✓ {{ 'قبول وإضافة' if lang=='ar' else 'Approve' }}</button>
+                </form>
+                <form method="post" action="{{ url_for('admin_topup_reject', rid=r.id) }}" class="flex" style="gap:4px;">
+                  <input type="text" name="admin_note" placeholder="{{ 'سبب' if lang=='ar' else 'reason' }}" style="width:90px;padding:4px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:12px;">
+                  <button class="btn btn-sm btn-danger">✕</button>
+                </form>
+                {% else %}<span class="muted">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty"><h3>{{ 'لا طلبات شحن' if lang=='ar' else 'No top-up requests' }}</h3></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

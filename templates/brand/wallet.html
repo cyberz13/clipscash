@@ -20,14 +20,65 @@
         </div>
       </div>
 
+      <!-- Transfer instructions -->
       <div class="form-card mt-3">
-        <h2>{{ t('wallet_topup') }}</h2>
-        <p class="sub">{{ 'وضع تجريبي — اتصال Stripe قريباً.' if lang=='ar' else 'Demo mode — Stripe integration coming soon.' }}</p>
-        <form method="post" action="{{ url_for('brand_topup') }}" class="flex">
-          <input type="number" name="amount" step="0.01" min="1" placeholder="100.00" style="flex:1; padding:12px; background: var(--bg); border:1px solid var(--line); color:var(--text); border-radius: 10px;">
-          <button class="btn btn-primary">+ {{ t('wallet_topup') }}</button>
+        <h2>{{ 'شحن المحفظة' if lang=='ar' else 'Add funds' }}</h2>
+        <p class="sub">{{ 'حوّل المبلغ إلى الحساب أدناه، ثم ارفع إيصال التحويل. يُضاف الرصيد بعد تأكيدنا (عادة خلال ساعات).' if lang=='ar' else 'Transfer to the account below, then upload the receipt. Balance is added after we confirm (usually within hours).' }}</p>
+        <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; font-size: 14px; line-height: 2;">
+          <div><span class="muted">{{ 'البنك:' if lang=='ar' else 'Bank:' }}</span> <strong>{{ pay_methods.bank_name }}</strong></div>
+          <div><span class="muted">IBAN:</span> <code style="font-family:ui-monospace,monospace; user-select:all;">{{ pay_methods.iban }}</code></div>
+          <div><span class="muted">{{ 'المستفيد:' if lang=='ar' else 'Beneficiary:' }}</span> {{ pay_methods.beneficiary }}</div>
+          <div><span class="muted">STC Pay:</span> <code style="user-select:all;">{{ pay_methods.stc_pay }}</code></div>
+        </div>
+
+        <form method="post" action="{{ url_for('brand_topup') }}" enctype="multipart/form-data">
+          <div class="field-row">
+            <div class="field">
+              <label>{{ 'المبلغ المحوّل (ر.س)' if lang=='ar' else 'Amount transferred (SAR)' }}</label>
+              <input type="number" name="amount" step="0.01" min="1" required placeholder="1000">
+            </div>
+            <div class="field">
+              <label>{{ 'طريقة التحويل' if lang=='ar' else 'Transfer method' }}</label>
+              <select name="method">
+                <option value="bank">{{ 'تحويل بنكي' if lang=='ar' else 'Bank transfer' }}</option>
+                <option value="stc_pay">STC Pay</option>
+                <option value="apple_pay">Apple Pay</option>
+                <option value="other">{{ 'أخرى' if lang=='ar' else 'Other' }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>{{ 'رقم العملية / اسم المرسل (اختياري)' if lang=='ar' else 'Reference / sender name (optional)' }}</label>
+            <input type="text" name="reference" placeholder="{{ 'مثال: TX-998877' if lang=='ar' else 'e.g. TX-998877' }}">
+          </div>
+          <div class="field">
+            <label>{{ 'إيصال التحويل (صورة أو PDF)' if lang=='ar' else 'Transfer receipt (image or PDF)' }}</label>
+            <input type="file" name="proof" accept="image/*,.pdf">
+          </div>
+          <button class="btn btn-primary">{{ 'إرسال طلب الشحن' if lang=='ar' else 'Submit top-up request' }}</button>
         </form>
       </div>
+
+      {% if topups %}
+      <div class="table-card mt-3">
+        <div class="table-head"><h3>{{ 'طلبات الشحن' if lang=='ar' else 'Top-up requests' }}</h3></div>
+        <table class="data">
+          <thead><tr><th>{{ 'التاريخ' if lang=='ar' else 'Date' }}</th><th>{{ 'المبلغ' if lang=='ar' else 'Amount' }}</th><th>{{ 'الطريقة' if lang=='ar' else 'Method' }}</th><th>{{ 'الحالة' if lang=='ar' else 'Status' }}</th></tr></thead>
+          <tbody>
+            {% for r in topups %}
+            <tr>
+              <td class="muted">{{ r.created_at[:16] }}</td>
+              <td>{{ fmt_money(r.amount_cents) }}</td>
+              <td class="muted">{{ r.method }}</td>
+              <td><span class="chip {{ 'approved' if r.status=='approved' else ('rejected' if r.status=='rejected' else 'pending') }}">{{ t(r.status) if r.status in ['approved','rejected','pending'] else r.status }}</span>
+                  {% if r.admin_note %}<div class="muted" style="font-size:11px;margin-top:4px;">{{ r.admin_note }}</div>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
 
       <div class="table-card mt-3">
         <div class="table-head"><h3>{{ t('wallet_tx') }}</h3></div>

@@ -50,6 +50,14 @@ try:
 except Exception:
     ASSET_VERSION = "1"
 
+# Where brands send their transfer for manual wallet top-ups (shown on wallet page).
+PAY_INSTRUCTIONS = {
+    "bank_name": os.environ.get("CLIPSCASH_PAY_BANK", "بنك الراجحي"),
+    "iban": os.environ.get("CLIPSCASH_PAY_IBAN", "SA00 0000 0000 0000 0000 0000"),
+    "beneficiary": os.environ.get("CLIPSCASH_PAY_NAME", "Clipscash"),
+    "stc_pay": os.environ.get("CLIPSCASH_PAY_STC", "05XXXXXXXX"),
+}
+
 app = Flask(__name__)
 
 # === Production-aware config ===
@@ -1119,7 +1127,11 @@ def brand_mark_creator(creator_id):
 def brand_wallet():
     u = current_user()
     tx = db.query("SELECT * FROM wallet_tx WHERE user_id=? ORDER BY created_at DESC LIMIT 50", (u["id"],))
-    return render_template("brand/wallet.html", tx=tx)
+    topups = db.query(
+        "SELECT * FROM topup_requests WHERE brand_id=? ORDER BY created_at DESC LIMIT 20", (u["id"],)
+    )
+    return render_template("brand/wallet.html", tx=tx, topups=topups,
+                           pay_methods=PAY_INSTRUCTIONS)
 
 
 @app.route("/brand/wallet/topup", methods=["POST"])
@@ -1127,15 +1139,34 @@ def brand_wallet():
 def brand_topup():
     u = current_user()
     amount = parse_money_input(request.form.get("amount", ""))
-    if amount <= 0:
-        flash("Enter a positive amount.", "error")
+    method = request.form.get("method", "bank")
+    if method not in ("bank", "stc_pay", "apple_pay", "other"):
+        method = "bank"
+    reference = (request.form.get("reference") or "").strip()[:120]
+    note = (request.form.get("note") or "").strip()[:500]
+    if amount < 100:  # min 1 SAR
+        flash("أدخل مبلغاً صحيحاً." if lang() == "ar" else "Enter a valid amount.", "error")
         return redirect(url_for("brand_wallet"))
-    db.execute("UPDATE users SET balance_cents = balance_cents + ? WHERE id=?", (amount, u["id"]))
-    db.execute(
-        "INSERT INTO wallet_tx (user_id, kind, amount_cents, note) VALUES (?,?,?,?)",
-        (u["id"], "topup", amount, "Wallet top-up (mock — Stripe coming soon)"),
+    proof_url = None
+    f = request.files.get("proof")
+    if f and f.filename:
+        ext = secure_filename(f.filename).rsplit(".", 1)[-1].lower()
+        if ext in ("png", "jpg", "jpeg", "webp", "gif", "pdf"):
+            fname = f"topup_{secrets.token_hex(8)}.{ext}"
+            f.save(UPLOAD_DIR / fname)
+            proof_url = f"/static/uploads/{fname}"
+    rid = db.execute(
+        """INSERT INTO topup_requests (brand_id, amount_cents, method, reference, proof_url, note)
+           VALUES (?,?,?,?,?,?)""",
+        (u["id"], amount, method, reference, proof_url, note),
     )
-    flash(f"Added {fmt_money(amount)} to wallet.", "success")
+    # Notify all admins
+    for a in db.query("SELECT id FROM users WHERE role='admin'"):
+        notify(a["id"], "New top-up request" if lang() == "en" else "طلب شحن جديد",
+               f"{u['name']}: {fmt_money(amount)}",
+               url_for("admin_topups"), "wallet")
+    flash("تم إرسال طلب الشحن. سيُضاف الرصيد بعد تأكيد التحويل." if lang() == "ar"
+          else "Top-up request sent. Balance will be added after we confirm the transfer.", "success")
     return redirect(url_for("brand_wallet"))
 
 
@@ -1724,6 +1755,74 @@ def admin_payout_status(pid):
            url_for("creator_wallet"), "wallet", email=True)
     flash(f"Payout marked {status}.", "success")
     return redirect(url_for("admin_payouts"))
+
+
+# ===== Super-admin: TOP-UP requests (manual wallet funding) =====
+
+@app.route("/admin/topups")
+@login_required("admin")
+def admin_topups():
+    status_f = request.args.get("status", "")
+    sql = """SELECT tr.*, u.name AS brand_name, u.email AS brand_email
+             FROM topup_requests tr JOIN users u ON u.id=tr.brand_id"""
+    params: list = []
+    if status_f in ("pending", "approved", "rejected"):
+        sql += " WHERE tr.status=?"
+        params.append(status_f)
+    sql += " ORDER BY tr.created_at DESC LIMIT 200"
+    rows = db.query(sql, tuple(params))
+    pending_count = db.query_one(
+        "SELECT COUNT(*) c FROM topup_requests WHERE status='pending'")["c"]
+    return render_template("admin/topups.html", rows=rows, status_f=status_f,
+                           pending_count=pending_count)
+
+
+@app.route("/admin/topups/<int:rid>/approve", methods=["POST"])
+@login_required("admin")
+def admin_topup_approve(rid):
+    r = db.query_one("SELECT * FROM topup_requests WHERE id=?", (rid,))
+    if not r:
+        abort(404)
+    if r["status"] != "pending":
+        flash("Already reviewed.", "error")
+        return redirect(url_for("admin_topups"))
+    admin_note = (request.form.get("admin_note") or "").strip()[:300]
+    db.execute(
+        "UPDATE topup_requests SET status='approved', admin_note=?, reviewed_at=datetime('now') WHERE id=?",
+        (admin_note, rid),
+    )
+    db.execute("UPDATE users SET balance_cents = balance_cents + ? WHERE id=?",
+               (r["amount_cents"], r["brand_id"]))
+    db.execute(
+        "INSERT INTO wallet_tx (user_id, kind, amount_cents, note, ref_id) VALUES (?,?,?,?,?)",
+        (r["brand_id"], "topup", r["amount_cents"], "Wallet top-up (confirmed transfer)", rid),
+    )
+    notify(r["brand_id"], "Top-up approved" if lang() == "en" else "تم قبول الشحن",
+           f"{fmt_money(r['amount_cents'])} " + ("added to your wallet" if lang() == "en" else "أُضيفت لمحفظتك"),
+           url_for("brand_wallet"), "wallet", email=True)
+    flash(f"Approved. {fmt_money(r['amount_cents'])} credited.", "success")
+    return redirect(url_for("admin_topups"))
+
+
+@app.route("/admin/topups/<int:rid>/reject", methods=["POST"])
+@login_required("admin")
+def admin_topup_reject(rid):
+    r = db.query_one("SELECT * FROM topup_requests WHERE id=?", (rid,))
+    if not r:
+        abort(404)
+    if r["status"] != "pending":
+        flash("Already reviewed.", "error")
+        return redirect(url_for("admin_topups"))
+    admin_note = (request.form.get("admin_note") or "").strip()[:300]
+    db.execute(
+        "UPDATE topup_requests SET status='rejected', admin_note=?, reviewed_at=datetime('now') WHERE id=?",
+        (admin_note, rid),
+    )
+    notify(r["brand_id"], "Top-up rejected" if lang() == "en" else "تم رفض الشحن",
+           admin_note or ("Contact support" if lang() == "en" else "تواصل مع الدعم"),
+           url_for("brand_wallet"), "x", email=True)
+    flash("Top-up rejected.", "info")
+    return redirect(url_for("admin_topups"))
 
 
 # ============================================================

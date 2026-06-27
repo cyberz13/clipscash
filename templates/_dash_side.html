@@ -25,5 +25,6 @@
     <a href="{{ url_for('admin_campaigns') }}" class="{% if request.endpoint=='admin_campaigns' %}active{% endif %}">{{ t('dash_campaigns') }}</a>
     <a href="{{ url_for('admin_submissions') }}" class="{% if request.endpoint=='admin_submissions' %}active{% endif %}">{{ t('dash_submissions') }}</a>
     <a href="{{ url_for('admin_payouts') }}" class="{% if request.endpoint=='admin_payouts' %}active{% endif %}">{{ 'السحوبات' if lang=='ar' else 'Payouts' }}</a>
+    <a href="{{ url_for('admin_topups') }}" class="{% if request.endpoint=='admin_topups' %}active{% endif %}">{{ 'طلبات الشحن' if lang=='ar' else 'Top-ups' }}</a>
   {% endif %}
 </aside>

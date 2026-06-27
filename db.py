@@ -151,6 +151,25 @@ def migrate() -> None:
     cur.execute("CREATE INDEX IF NOT EXISTS idx_view_clicks_fan ON view_clicks(fan_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_view_clicks_visitor ON view_clicks(submission_id, visitor_token)")
 
+    # Manual wallet top-up requests (brand uploads transfer proof, admin approves)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS topup_requests (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            brand_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            amount_cents INTEGER NOT NULL,
+            method       TEXT,                -- bank / stc_pay / apple_pay / other
+            reference    TEXT,                -- transfer reference / sender name
+            proof_url    TEXT,                -- uploaded receipt image
+            note         TEXT,
+            status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+            admin_note   TEXT,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            reviewed_at  TEXT
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_topup_brand ON topup_requests(brand_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_topup_status ON topup_requests(status)")
+
     conn.commit()
     conn.close()
 
